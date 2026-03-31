@@ -1,6 +1,8 @@
 Visual Studio 2026 (latest)  
 
-Please restart the solution or Visual Studio if the MainForm (Form1) breaks.  
+This Project is for academic purpose only.  
 
-This Project is for academic purpose only.   
+Additional Note:  
+
+Please restart the code editor or clear the cache (delete the .vs hidden folder) if the MainForm (Form1) breaks.  
 

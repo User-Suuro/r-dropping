@@ -75,12 +75,12 @@ Namespace My.Resources
         End Property
         
         '''<summary>
-        '''  Looks up a localized resource of type System.Byte[].
+        '''  Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         '''</summary>
-        Friend Shared ReadOnly Property logo() As Byte()
+        Friend Shared ReadOnly Property logo() As System.Drawing.Icon
             Get
                 Dim obj As Object = ResourceManager.GetObject("logo", resourceCulture)
-                Return CType(obj,Byte())
+                Return CType(obj,System.Drawing.Icon)
             End Get
         End Property
         
