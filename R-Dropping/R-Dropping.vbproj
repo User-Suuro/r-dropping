@@ -131,6 +131,11 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="components\BaseButton.vb" />
+    <Compile Include="components\BaseLabel.vb" />
+    <Compile Include="components\BasePanel.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="utils\conn.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
@@ -159,8 +164,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource1.resx</DependentUpon>
     </Compile>
-    <Compile Include="utils\strings.vb" />
+    <Compile Include="utils\values\colors.vb" />
+    <Compile Include="utils\values\strings.vb" />
     <Compile Include="utils\ui-utils.vb" />
+    <Compile Include="utils\values\themes.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Form1.resx">
@@ -193,7 +200,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="components\" />
     <Folder Include="routes\dashboard\" />
     <Folder Include="routes\root\" />
   </ItemGroup>
