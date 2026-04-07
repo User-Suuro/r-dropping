@@ -132,11 +132,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="components\BaseButton.vb" />
-    <Compile Include="components\BaseLabel.vb" />
+    <Compile Include="components\BaseInput.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="components\BaseLabel.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="components\BasePanel.vb">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="utils\conn.vb" />
+    <Compile Include="utils\db.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
     </Compile>
@@ -164,10 +169,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource1.resx</DependentUpon>
     </Compile>
-    <Compile Include="utils\values\colors.vb" />
+    <Compile Include="utils\values\styles.vb" />
+    <Compile Include="utils\values\dimen.vb" />
     <Compile Include="utils\values\strings.vb" />
-    <Compile Include="utils\ui-utils.vb" />
-    <Compile Include="utils\values\themes.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Form1.resx">

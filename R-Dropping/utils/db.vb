@@ -2,7 +2,7 @@
 Imports System.Security.Cryptography
 Imports System.Text
 Imports MySql.Data.MySqlClient
-Module modDB
+Module Db
     Public myadocon, conn As New MySqlConnection
     Public cmd As New MySqlCommand
     Public cmdRead As MySqlDataReader
