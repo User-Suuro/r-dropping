@@ -77,7 +77,6 @@ Public Class LayoutHelper
         ctrl.Top = (parentHeight - ctrl.Height) \ 2
     End Sub
 
-    ' full center (both axes)
     Public Shared Sub CenterBoth(ctrl As Control)
         CenterHorizontal(ctrl)
         CenterVertical(ctrl)
@@ -95,9 +94,7 @@ Public Class LayoutHelper
                 CenterBoth(ctrl)
             End Sub
 
-        ' Initial positioning
         CenterBoth(ctrl)
-
     End Sub
 
 End Class

@@ -10,12 +10,17 @@ Public Class BaseInputPanel
 
     Private _validator As InputValidator = Nothing
 
+    Private Const BaseHeight As Integer = 64
+    Private Const ErrorHeight As Integer = 12
+
+    Private errorContainer As New Panel()
+
     Public Sub New()
         MyBase.New()
 
         Me.DoubleBuffered = True
         Me.BackColor = Color.Transparent
-        Me.Height = 80
+        Me.Height = BaseHeight
 
         InitializeComponents()
         AttachEvents()
@@ -23,25 +28,31 @@ Public Class BaseInputPanel
 
     Private Sub InitializeComponents()
 
-        ' Label 
+        ' Label Title 
         lblTitle = New BaseLabel()
-        lblTitle.SetSmall()
-        lblTitle.Dock = DockStyle.Top
-        lblTitle.Padding = New Padding(0, 0, 0, 4)
+        With lblTitle
+            .SetSmall()
+            .Dock = DockStyle.Top
+            .Padding = New Padding(0, 0, 0, 4)
+        End With
 
-        ' Error Label (Bottom) 
+        ' Error Label (Hidden by default) 
 
-        Dim errorContainer As New Panel()
-        errorContainer.Dock = DockStyle.Bottom
-        errorContainer.Height = 22
+        errorContainer = New BasePanel()
+        With errorContainer
+            .Dock = DockStyle.Bottom
+            .Height = 24
+        End With
 
         lblError = New BaseLabel()
-        lblError.SetXS()
-        lblError.SetMuted()
-        lblError.ForeColor = Color.Red
-        lblError.Dock = DockStyle.Right
-        lblError.Visible = False
-        lblError.Padding = New Padding(0, 2, 0, 0)
+        With lblError
+            .SetXS()
+            .SetMuted()
+            .ForeColor = Color.Red
+            .Dock = DockStyle.Right
+            .Visible = False
+            .Padding = New Padding(0, 2, 0, 0)
+        End With
 
         errorContainer.Controls.Add(lblError)
 
@@ -51,14 +62,15 @@ Public Class BaseInputPanel
 
         ' Guna Input 
         txtInput = New Guna2TextBox()
-        txtInput.Dock = DockStyle.Top
-
-        txtInput.BorderRadius = 4
-        txtInput.PlaceholderForeColor = Colors.LblMuted
+        With txtInput
+            .Dock = DockStyle.Top
+            .BorderRadius = 4
+            .PlaceholderForeColor = Colors.LblMuted
+            .Height = 32
+        End With
 
         inputContainer.Controls.Add(txtInput)
 
-        Me.Controls.Add(errorContainer)
         Me.Controls.Add(inputContainer)
         Me.Controls.Add(lblTitle)
 
@@ -72,7 +84,7 @@ Public Class BaseInputPanel
                                          End Sub
     End Sub
 
-    ' ===== VALIDATION =====
+    ' VALIDATION
 
     Public Sub SetValidator(validator As InputValidator)
         _validator = validator
@@ -99,14 +111,18 @@ Public Class BaseInputPanel
         lblError.Text = message
         lblError.Visible = True
         txtInput.BorderColor = Color.Red
+        Me.Height = BaseHeight + lblError.Height
+        Me.Controls.Add(errorContainer)
     End Sub
 
     Private Sub ClearError()
         lblError.Visible = False
         txtInput.BorderColor = Color.Gray
+        Me.Controls.Remove(errorContainer)
+        Me.Height = BaseHeight
     End Sub
 
-    ' ===== PUBLIC API =====
+    ' Methods
 
     Public Property LabelText As String
         Get
@@ -135,11 +151,22 @@ Public Class BaseInputPanel
         End Set
     End Property
 
+    Public Property IsPassword As Boolean
+        Get
+            Return txtInput.UseSystemPasswordChar
+        End Get
+        Set(value As Boolean)
+            txtInput.UseSystemPasswordChar = value
+        End Set
+    End Property
+
     Public ReadOnly Property InputControl As Guna2TextBox
         Get
             Return txtInput
         End Get
     End Property
+
+
 
 End Class
 
@@ -149,7 +176,7 @@ Public Class InputValidator
 
     Private ReadOnly _rules As New List(Of Func(Of String, ValidationResult))
 
-    ' ===== STRING RULES =====
+    ' Strings
 
     Public Function Required() As InputValidator
         _rules.Add(Function(value)
@@ -181,7 +208,7 @@ Public Class InputValidator
         Return Me
     End Function
 
-    ' ===== NUMBER RULES =====
+    ' Integers / Numbers
 
     Public Function IsNumber() As InputValidator
         _rules.Add(Function(value)
@@ -226,8 +253,6 @@ Public Class InputValidator
         Return Me
     End Function
 
-    ' ===== EXECUTION =====
-
     Public Function Validate(value As String) As ValidationResult
         For Each rule In _rules
             Dim result = rule.Invoke(value)
@@ -237,6 +262,28 @@ Public Class InputValidator
         Next
 
         Return New ValidationResult(True, "")
+    End Function
+
+    Private Function ValidateAllInputs(parent As Control) As Boolean
+        Dim isValid As Boolean = True
+
+        For Each ctrl As Control In parent.Controls
+            If TypeOf ctrl Is BaseInputPanel Then
+                Dim input = CType(ctrl, BaseInputPanel)
+
+                If Not input.ValidateInput() Then
+                    isValid = False
+                End If
+            End If
+
+            If ctrl.HasChildren Then
+                If Not ValidateAllInputs(ctrl) Then
+                    isValid = False
+                End If
+            End If
+        Next
+
+        Return isValid
     End Function
 
 End Class

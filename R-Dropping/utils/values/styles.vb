@@ -20,6 +20,13 @@
     Public Shared LblSecondary As Color
     Public Shared LblMuted As Color
 
+    ' Buttons
+    Public Shared BtnPrimary As Color
+    Public Shared OnBtnPrimary As Color
+
+    Public Shared BtnSecondary As Color
+    Public Shared OnBtnSecondary As Color
+
 End Class
 
 
@@ -41,6 +48,12 @@ Public Class Themes
         Colors.LblPrimary = Color.FromArgb(240, 240, 240)
         Colors.LblSecondary = Color.FromArgb(180, 180, 180)
         Colors.LblMuted = Color.FromArgb(120, 120, 120)
+
+        Colors.BtnPrimary = Color.White
+        Colors.OnBtnPrimary = Color.Black
+
+        Colors.BtnSecondary = Color.FromArgb(200, 200, 200)
+        Colors.OnBtnSecondary = Color.Black
     End Sub
 
     Public Shared Sub ApplyLightTheme()
@@ -57,6 +70,12 @@ Public Class Themes
         Colors.LblPrimary = Color.FromArgb(33, 37, 41)
         Colors.LblSecondary = Color.FromArgb(108, 117, 125)
         Colors.LblMuted = Color.FromArgb(173, 181, 189)
+
+        Colors.BtnPrimary = Color.Black
+        Colors.OnBtnPrimary = Color.White
+
+        Colors.BtnSecondary = Color.FromArgb(80, 80, 80)
+        Colors.OnBtnSecondary = Color.White
     End Sub
 
 End Class

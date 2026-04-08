@@ -131,7 +131,9 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="components\BaseButton.vb" />
+    <Compile Include="components\BaseButton.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="components\BaseInput.vb">
       <SubType>Component</SubType>
     </Compile>
