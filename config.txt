@@ -1,0 +1,7 @@
+# ENV for localhost
+
+DB_SERVER=asdad
+DB_UID=dadasdas
+DB_PORT=adada
+DB_NAME=asdasd
+DB_PWD=dadada

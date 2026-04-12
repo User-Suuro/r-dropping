@@ -1,19 +1,24 @@
 ﻿Imports System.Windows
+Imports Mysqlx.XDevAPI.Common
 
 Public Class Form1
 
     Public mainPanel As New PrimaryPanel()
 
     ' CONFIG ELEMENTS
-    Private configPanel As New PrimaryPanel()
+
+    Private configContainerPanel As New PrimaryPanel()
+    Private configSubPanel As New PrimaryFlowLayoutPanel()
 
     Private serverInput As New BaseInputPanel()
     Private uidInput As New BaseInputPanel()
     Private pwdInput As New BaseInputPanel()
     Private dbNameInput As New BaseInputPanel()
+    Private dbPortInput As New BaseInputPanel()
 
-    Private overlay As New Panel()
     Private btnSubmit As New BaseButton()
+
+    Private configVal As New DbConfig()
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
@@ -39,75 +44,99 @@ Public Class Form1
             .Image = My.Resources.Resource1.login_animation
         End With
 
+        ' Config Panel
         mainPanel.Controls.Add(bg)
 
-        ' Overlay (Background transparent black panel)
-        overlay = OverlayPanel.CreateOverlay(120)
+        ' Overlay
+        Dim overlay As Panel = OverlayPanel.CreateOverlay()
+        overlay.Dock = DockStyle.Fill
+        overlay.BringToFront()
         bg.Controls.Add(overlay)
 
-        ' Config Panel
-
-        With configPanel
-            .Size = New Size(260, 336)
-            .Padding = New Padding(16)
+        With configContainerPanel
+            .AutoSize = True
+            .AutoSizeMode = AutoSizeMode.GrowAndShrink
         End With
 
-        overlay.Controls.Add(configPanel)
+        overlay.Controls.Add(configContainerPanel)
 
-        LayoutHelper.CenterBoth(configPanel)
-        LayoutHelper.EnableAutoCenter(configPanel)
+        With configSubPanel
+            .Padding = New Padding(16)
+            .FlowDirection = FlowDirection.TopDown
+            .AutoSize = True
+            .AutoSizeMode = AutoSizeMode.GrowAndShrink
+        End With
+
+        configContainerPanel.Controls.Add(configSubPanel)
 
         renderConfigPanelContent()
+
+        LayoutHelper.CenterBoth(configContainerPanel)
+        LayoutHelper.EnableAutoCenter(configContainerPanel)
+
+        ' Initialize Config
+        ConfigManager.EnsureConfigExists(Of DbConfig)()
 
     End Sub
 
 
     Private Sub renderConfigPanelContent()
 
+        configVal = ConfigManager.Load(Of DbConfig)()
+
         With serverInput
             .LabelText = Strings.SERVER_LBL
-            .Placeholder = Strings.SERVER_PLACEHOLDER
-            .Dock = DockStyle.Top
+            .InputControl.PlaceholderText = Strings.SERVER_PLACEHOLDER
+            .InputControl.Text = configVal.DB_SERVER
             .SetValidator(
             New InputValidator().Required())
         End With
 
         With uidInput
             .LabelText = Strings.UID_LBL
-            .Placeholder = Strings.UID_PLACEHOLDER
-            .Dock = DockStyle.Top
+            .InputControl.PlaceholderText = Strings.UID_PLACEHOLDER
+            .InputControl.Text = configVal.DB_UID
             .SetValidator(
             New InputValidator().Required())
         End With
 
         With pwdInput
             .LabelText = Strings.DB_PASS_LBL
-            .Placeholder = Strings.DB_PASS_PLACEHOLDER
-            .Dock = DockStyle.Top
-            .IsPassword = True
+            .InputControl.PlaceholderText = Strings.DB_PASS_PLACEHOLDER
+            .InputControl.UseSystemPasswordChar = True
+            .InputControl.Text = configVal.DB_PWD
             .SetValidator(
             New InputValidator().Required())
         End With
 
         With dbNameInput
             .LabelText = Strings.DB_NAME
-            .Placeholder = Strings.DB_NAME_PLACEHOLDER
-            .Dock = DockStyle.Top
+            .InputControl.PlaceholderText = Strings.DB_NAME_PLACEHOLDER
+            .InputControl.Text = configVal.DB_NAME
+            .SetValidator(
+            New InputValidator().Required())
+        End With
+
+        With dbPortInput
+            .LabelText = Strings.DB_PORT
+            .InputControl.PlaceholderText = Strings.DB_PORT_PLACEHOLDER
+            .InputControl.Text = configVal.DB_PORT
             .SetValidator(
             New InputValidator().Required())
         End With
 
         With btnSubmit
-            .Text = Strings.BTN_SUBMIT
+            .Text = Strings.BTN_CONNECT
             .SetPrimary()
         End With
 
-        With configPanel.Controls
-            .Add(btnSubmit)
-            .Add(dbNameInput)
-            .Add(pwdInput)
-            .Add(uidInput)
+        With configSubPanel.Controls
             .Add(serverInput)
+            .Add(dbPortInput)
+            .Add(uidInput)
+            .Add(pwdInput)
+            .Add(dbNameInput)
+            .Add(btnSubmit)
         End With
 
 
@@ -119,6 +148,25 @@ Public Class Form1
         If Not ValidateAllInputs() Then
             Exit Sub
         End If
+
+        Try
+            With configVal
+                .DB_PORT = dbPortInput.InputControl.Text
+                .DB_UID = uidInput.InputControl.Text
+                .DB_SERVER = serverInput.InputControl.Text
+                .DB_PWD = pwdInput.InputControl.Text
+                .DB_NAME = dbNameInput.InputControl.Text
+            End With
+
+            ConfigManager.Save(configVal)
+
+            MessageBox.Show("success")
+        Catch ex As Exception
+
+            MessageBox.Show(ex.Message)
+        End Try
+
+
 
     End Sub
 
@@ -134,7 +182,5 @@ Public Class Form1
         Return Inputs.All(Function(i) i.ValidateInput())
     End Function
 
-
-
-
 End Class
+

@@ -1,7 +1,7 @@
 ﻿Imports Guna.UI2.WinForms
 
 Public Class BaseInputPanel
-    Inherits Panel
+    Inherits PrimaryPanel
 
     Private lblTitle As BaseLabel
     Private txtInput As Guna2TextBox
@@ -10,9 +10,7 @@ Public Class BaseInputPanel
 
     Private _validator As InputValidator = Nothing
 
-    Private Const BaseHeight As Integer = 64
-    Private Const ErrorHeight As Integer = 12
-
+    Private Const BaseHeight As Integer = 60
     Private errorContainer As New Panel()
 
     Public Sub New()
@@ -52,6 +50,7 @@ Public Class BaseInputPanel
             .Dock = DockStyle.Right
             .Visible = False
             .Padding = New Padding(0, 2, 0, 0)
+            .AutoSize = True
         End With
 
         errorContainer.Controls.Add(lblError)
@@ -117,7 +116,7 @@ Public Class BaseInputPanel
 
     Private Sub ClearError()
         lblError.Visible = False
-        txtInput.BorderColor = Color.Gray
+        txtInput.BorderColor = Color.FromArgb(213, 218, 223)
         Me.Controls.Remove(errorContainer)
         Me.Height = BaseHeight
     End Sub
@@ -133,40 +132,11 @@ Public Class BaseInputPanel
         End Set
     End Property
 
-    Public Property InputText As String
-        Get
-            Return txtInput.Text
-        End Get
-        Set(value As String)
-            txtInput.Text = value
-        End Set
-    End Property
-
-    Public Property Placeholder As String
-        Get
-            Return txtInput.PlaceholderText
-        End Get
-        Set(value As String)
-            txtInput.PlaceholderText = value
-        End Set
-    End Property
-
-    Public Property IsPassword As Boolean
-        Get
-            Return txtInput.UseSystemPasswordChar
-        End Get
-        Set(value As Boolean)
-            txtInput.UseSystemPasswordChar = value
-        End Set
-    End Property
-
     Public ReadOnly Property InputControl As Guna2TextBox
         Get
             Return txtInput
         End Get
     End Property
-
-
 
 End Class
 
@@ -262,28 +232,6 @@ Public Class InputValidator
         Next
 
         Return New ValidationResult(True, "")
-    End Function
-
-    Private Function ValidateAllInputs(parent As Control) As Boolean
-        Dim isValid As Boolean = True
-
-        For Each ctrl As Control In parent.Controls
-            If TypeOf ctrl Is BaseInputPanel Then
-                Dim input = CType(ctrl, BaseInputPanel)
-
-                If Not input.ValidateInput() Then
-                    isValid = False
-                End If
-            End If
-
-            If ctrl.HasChildren Then
-                If Not ValidateAllInputs(ctrl) Then
-                    isValid = False
-                End If
-            End If
-        Next
-
-        Return isValid
     End Function
 
 End Class

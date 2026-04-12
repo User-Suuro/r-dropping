@@ -17,11 +17,17 @@
     Public Shared DB_NAME As String = "Database Name"
     Public Shared DB_NAME_PLACEHOLDER As String = "Enter the Database Name"
 
+    Public Shared DB_PORT As String = "Port"
+    Public Shared DB_PORT_PLACEHOLDER As String = "3306 / etc."
+
+    Public Shared BTN_CONNECT = "Connect"
+
     ' MISC
     Public Shared FONT_FAMILY As String = "Roboto"
 
 
     ' BUTTONS
     Public Shared BTN_SUBMIT = "Submit"
+
 
 End Class

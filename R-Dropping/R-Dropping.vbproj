@@ -134,6 +134,12 @@
     <Compile Include="components\BaseButton.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="components\BaseFlowLayout.Designer.vb">
+      <DependentUpon>BaseFlowLayout.vb</DependentUpon>
+    </Compile>
+    <Compile Include="components\BaseFlowLayout.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="components\BaseInput.vb">
       <SubType>Component</SubType>
     </Compile>
@@ -143,6 +149,8 @@
     <Compile Include="components\BasePanel.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="models\DbConfig.vb" />
+    <Compile Include="utils\config.vb" />
     <Compile Include="utils\db.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
@@ -171,6 +179,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource1.resx</DependentUpon>
     </Compile>
+    <Compile Include="utils\layout.vb" />
     <Compile Include="utils\values\styles.vb" />
     <Compile Include="utils\values\dimen.vb" />
     <Compile Include="utils\values\strings.vb" />

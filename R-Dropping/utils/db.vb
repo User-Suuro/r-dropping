@@ -143,6 +143,7 @@ Module Db
         End Using
         Return clearText
     End Function
+
     Public Function Decrypt(ByVal cipherText As String) As String
         Dim EncryptionKey As String = "MAKV2SPBNI99212"
         Dim cipherBytes As Byte() = Convert.FromBase64String(cipherText)
@@ -162,6 +163,7 @@ Module Db
         End Using
         Return cipherText
     End Function
+
     Sub Logs(ByVal transaction As String, Optional ByVal events As String = "*_Click")
         Try
             readQuery(String.Format("INSERT INTO `logs`(`dt`, `user_accounts_id`, `event`, `transactions`) VALUES ({0},{1},'{2}','{3}')", "now()",
