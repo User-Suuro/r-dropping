@@ -1,6 +1,4 @@
-﻿Imports System.Windows
-Imports Mysqlx.XDevAPI.Common
-
+﻿
 Public Class Form1
 
     Public mainPanel As New PrimaryPanel()
@@ -22,6 +20,8 @@ Public Class Form1
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
+        ' main container
+
         mainPanel.Dock = DockStyle.Fill
 
         With Me
@@ -34,8 +34,6 @@ Public Class Form1
         End With
 
         Themes.ApplyLightTheme()
-
-        ' BG ANIMATION
         Dim bg As New PictureBox()
 
         With bg
@@ -44,14 +42,16 @@ Public Class Form1
             .Image = My.Resources.Resource1.login_animation
         End With
 
-        ' Config Panel
+
         mainPanel.Controls.Add(bg)
 
         ' Overlay
         Dim overlay As Panel = OverlayPanel.CreateOverlay()
+
         overlay.Dock = DockStyle.Fill
-        overlay.BringToFront()
         bg.Controls.Add(overlay)
+
+        ' Config Panel
 
         With configContainerPanel
             .AutoSize = True
@@ -76,7 +76,6 @@ Public Class Form1
 
         ' Initialize Config
         ConfigManager.EnsureConfigExists(Of DbConfig)()
-
     End Sub
 
 
@@ -130,6 +129,11 @@ Public Class Form1
             .SetPrimary()
         End With
 
+        Dim overlay As Panel = OverlayPanel.CreateOverlay()
+
+        overlay.Dock = DockStyle.Fill
+
+
         With configSubPanel.Controls
             .Add(serverInput)
             .Add(dbPortInput)
@@ -138,7 +142,6 @@ Public Class Form1
             .Add(dbNameInput)
             .Add(btnSubmit)
         End With
-
 
         AddHandler btnSubmit.Click, AddressOf SaveConfig
     End Sub
@@ -165,9 +168,6 @@ Public Class Form1
 
             MessageBox.Show(ex.Message)
         End Try
-
-
-
     End Sub
 
     Private Function ValidateAllInputs() As Boolean
@@ -184,3 +184,120 @@ Public Class Form1
 
 End Class
 
+
+
+' ===== DIALOG COMPONENT  =====
+
+
+
+Public Class BaseDialog
+    Inherits Form
+
+    Private overlay As BaseDialogOverlay
+    Private container As Panel
+
+    Public Sub New(targetPanel As Control)
+        FormBorderStyle = FormBorderStyle.None
+        StartPosition = FormStartPosition.Manual
+        ShowInTaskbar = False
+        BackColor = Color.White
+        Size = New Size(400, 200)
+
+        container = New Panel With {
+            .Dock = DockStyle.Fill,
+            .BackColor = Color.White
+        }
+
+        Controls.Add(container)
+
+        overlay = New BaseDialogOverlay(targetPanel)
+    End Sub
+
+    Public Sub ShowDialogBounded()
+        overlay.Show()
+
+        AddHandler overlay.BoundsChanged, AddressOf SyncDialogPosition
+
+        Me.Owner = overlay
+        Me.Show()
+
+        SyncDialogPosition(Nothing, EventArgs.Empty)
+    End Sub
+
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        MyBase.OnFormClosed(e)
+        If overlay IsNot Nothing AndAlso Not overlay.IsDisposed Then
+            overlay.Close()
+        End If
+    End Sub
+
+    Protected Overrides Sub OnDeactivate(e As EventArgs)
+        MyBase.OnDeactivate(e)
+
+        If Me.Visible Then
+            Me.Focus()
+            Me.BringToFront()
+        End If
+    End Sub
+
+    Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
+        If overlay Is Nothing OrElse overlay.IsDisposed Then Return
+
+        Dim center As Point = New Point(
+        overlay.Left + (overlay.Width - Me.Width) \ 2,
+        overlay.Top + (overlay.Height - Me.Height) \ 2
+    )
+
+        Me.Location = center
+    End Sub
+
+End Class
+
+Public Class BaseDialogOverlay
+    Inherits Form
+
+    Private ReadOnly _targetPanel As Control
+    Private ReadOnly _parentForm As Form
+    Public Event BoundsChanged As EventHandler
+
+    Public Sub New(targetPanel As Control)
+        _targetPanel = targetPanel
+        _parentForm = targetPanel.FindForm()
+
+        ' FORM CONFIG
+        FormBorderStyle = FormBorderStyle.None
+        ShowInTaskbar = False
+        TopMost = False
+        StartPosition = FormStartPosition.Manual
+
+        BackColor = Color.Black
+        Opacity = 0.45R
+
+        If _parentForm IsNot Nothing Then
+            Owner = _parentForm
+        End If
+
+        AddHandler _targetPanel.SizeChanged, AddressOf SyncBounds
+        AddHandler _targetPanel.LocationChanged, AddressOf SyncBounds
+
+        If _parentForm IsNot Nothing Then
+            AddHandler _parentForm.LocationChanged, AddressOf SyncBounds
+            AddHandler _parentForm.SizeChanged, AddressOf SyncBounds
+        End If
+    End Sub
+
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
+        SyncBounds(Nothing, EventArgs.Empty)
+    End Sub
+
+    Private Sub SyncBounds(sender As Object, e As EventArgs)
+        If _targetPanel Is Nothing OrElse _targetPanel.IsDisposed Then Return
+
+        Dim rect As Rectangle = _targetPanel.RectangleToScreen(_targetPanel.ClientRectangle)
+        Bounds = rect
+
+        RaiseEvent BoundsChanged(Me, EventArgs.Empty)
+    End Sub
+
+End Class
