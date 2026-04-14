@@ -77,29 +77,26 @@ Public Class Form1
         ' Initialize Config
         ConfigManager.EnsureConfigExists(Of DbConfig)()
 
-        Dim dlg As New BaseDialog(Me.mainPanel)
+        '
 
-        DialogTypes.Apply(dlg,
-                          DialogType.Confirmation,
-                          "Delete Record",
-                          "Are you sure you want to delete this?")
 
-        AddHandler dlg.DialogClosed,
-            Sub(result)
+        'DialogTypes.Apply(dlg,
+        '                  DialogType.Confirmation,
+        '                  "delete record",
+        '                  "are you sure you want to delete this?")
 
-                If result = DialogResultType.Confirm Then
-                    DeleteRecord()
-                End If
+        'AddHandler dlg.DialogClosed,
+        '    Sub(result)
 
-            End Sub
+        '        If result = DialogResultType.Confirm Then
+        '            DeleteRecord()
+        '        End If
 
-        dlg.ShowDialogBounded()
+        '    End Sub
+
+        'dlg.ShowDialogBounded()
     End Sub
 
-
-    Private Sub DeleteRecord()
-        MessageBox.Show("Deleted!")
-    End Sub
 
 
     Private Sub renderConfigPanelContent()
@@ -170,6 +167,8 @@ Public Class Form1
     End Sub
 
     Private Sub SaveConfig()
+        Dim dlg As New BaseDialog(Me.mainPanel)
+
 
         If Not ValidateAllInputs() Then
             Exit Sub
@@ -186,10 +185,22 @@ Public Class Form1
 
             ConfigManager.Save(configVal)
 
-            MessageBox.Show("success")
+
+
+            DialogTypes.Apply(dlg,
+                             DialogType.Info,
+                             "Success Connected to Database",
+                             "The Configuration was saved locally")
+
+            dlg.ShowDialog()
         Catch ex As Exception
 
-            MessageBox.Show(ex.Message)
+            DialogTypes.Apply(dlg,
+                              DialogType.Error,
+                              "Error Saving Configuration",
+                              "An error occurred while saving the configuration. Please try again.")
+
+            dlg.ShowDialog()
         End Try
     End Sub
 
@@ -277,14 +288,17 @@ Public Class BaseDialog
         With lblDescription
             .SetSmall()
             .TextAlign = ContentAlignment.MiddleCenter
-             .Anchor = AnchorStyles.None
+            .Anchor = AnchorStyles.None
         End With
 
         ' BUTTON TABLE (2 columns)
         buttonTable = New TableLayoutPanel With {
             .AutoSize = True,
             .AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            .ColumnCount = 2
+            .ColumnCount = 2,
+            .Padding = Padding.Empty,
+            .Dock = DockStyle.Top,
+            .CellBorderStyle = TableLayoutPanelCellBorderStyle.None
         }
 
         buttonTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50))
@@ -296,6 +310,8 @@ Public Class BaseDialog
             .Text = Strings.BTN_CONFIRM
             .Dock = DockStyle.Fill
             .SetPrimary()
+            .Padding = Padding.Empty
+            .Margin = Padding.Empty
         End With
 
         btnCancel = New BaseButton()
@@ -304,6 +320,8 @@ Public Class BaseDialog
             .Text = Strings.BTN_CANCEL
             .Dock = DockStyle.Fill
             .SetDanger()
+            .Padding = Padding.Empty
+            .Margin = Padding.Empty
         End With
 
         AddHandler btnConfirm.Click, Sub()
@@ -320,7 +338,6 @@ Public Class BaseDialog
 
         buttonTable.Controls.Add(btnCancel, 0, 0)
         buttonTable.Controls.Add(btnConfirm, 1, 0)
-
 
         Me.Controls.Add(subContainer)
 
@@ -348,9 +365,48 @@ Public Class BaseDialog
 
     Public Sub SetConfirmVisible(visible As Boolean)
         btnConfirm.Visible = visible
+        UpdateButtonLayout()
+    End Sub
+
+    Public Sub SetCancelVisible(visible As Boolean)
+        btnCancel.Visible = visible
+        UpdateButtonLayout()
+    End Sub
+    Public Sub SetConfirmText(text As String)
+        btnConfirm.Text = text
+    End Sub
+
+    Public Sub SetCancelText(text As String)
+        btnCancel.Text = text
     End Sub
 
     ' UTILITIES
+
+    Private Sub UpdateButtonLayout()
+        buttonTable.ColumnStyles.Clear()
+        buttonTable.Controls.Clear()
+
+        Dim visibleButtons As New List(Of BaseButton)
+
+        If btnCancel.Visible Then visibleButtons.Add(btnCancel)
+        If btnConfirm.Visible Then visibleButtons.Add(btnConfirm)
+
+        Dim count As Integer = visibleButtons.Count
+
+        If count = 0 Then
+            buttonTable.Visible = False
+            Exit Sub
+        End If
+
+        buttonTable.Visible = True
+        buttonTable.ColumnCount = count
+
+        For i = 0 To count - 1
+            buttonTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F / count))
+            buttonTable.Controls.Add(visibleButtons(i), i, 0)
+            visibleButtons(i).Dock = DockStyle.Fill
+        Next
+    End Sub
 
     Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
         If dialogOverlay Is Nothing OrElse dialogOverlay.IsDisposed Then Return
@@ -362,7 +418,7 @@ Public Class BaseDialog
         Me.Location = center
     End Sub
 
-    Public Sub ShowDialogBounded()
+    Public Sub ShowDialog()
         dialogOverlay.Show()
 
         AddHandler dialogOverlay.BoundsChanged, AddressOf SyncDialogPosition

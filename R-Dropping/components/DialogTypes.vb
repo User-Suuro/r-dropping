@@ -22,18 +22,25 @@ Public Class DialogTypes
 
             Case DialogType.Info
                 dialog.SetIcon(SystemIcons.Information.ToBitmap())
-                dialog.SetConfirmVisible(False)
+                dialog.SetConfirmVisible(True)
+                dialog.SetCancelVisible(False)
+                dialog.SetCancelText(Strings.BTN_CONFIRM)
 
             Case DialogType.Warning
                 dialog.SetIcon(SystemIcons.Warning.ToBitmap())
-                dialog.SetConfirmVisible(False)
+                dialog.SetConfirmVisible(True)
+                dialog.SetCancelVisible(False)
+                dialog.SetCancelText(Strings.BTN_CONFIRM)
 
             Case DialogType.Error
                 dialog.SetIcon(SystemIcons.Error.ToBitmap())
-                dialog.SetConfirmVisible(False)
+                dialog.SetConfirmVisible(True)
+                dialog.SetCancelVisible(False)
+                dialog.SetCancelText(Strings.BTN_CONFIRM)
 
             Case DialogType.Confirmation
                 dialog.SetIcon(SystemIcons.Question.ToBitmap())
+                dialog.SetConfirmVisible(True)
                 dialog.SetConfirmVisible(True)
 
         End Select
