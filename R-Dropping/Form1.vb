@@ -76,6 +76,29 @@ Public Class Form1
 
         ' Initialize Config
         ConfigManager.EnsureConfigExists(Of DbConfig)()
+
+        Dim dlg As New BaseDialog(Me.mainPanel)
+
+        DialogTypes.Apply(dlg,
+                          DialogType.Confirmation,
+                          "Delete Record",
+                          "Are you sure you want to delete this?")
+
+        AddHandler dlg.DialogClosed,
+            Sub(result)
+
+                If result = DialogResultType.Confirm Then
+                    DeleteRecord()
+                End If
+
+            End Sub
+
+        dlg.ShowDialogBounded()
+    End Sub
+
+
+    Private Sub DeleteRecord()
+        MessageBox.Show("Deleted!")
     End Sub
 
 
@@ -184,41 +207,167 @@ Public Class Form1
 
 End Class
 
-
-
 ' ===== DIALOG COMPONENT  =====
-
-
 
 Public Class BaseDialog
     Inherits Form
 
-    Private overlay As BaseDialogOverlay
-    Private container As Panel
+    Private dialogOverlay As BaseDialogOverlay
+
 
     Public Sub New(targetPanel As Control)
         FormBorderStyle = FormBorderStyle.None
         StartPosition = FormStartPosition.Manual
         ShowInTaskbar = False
         BackColor = Color.White
-        Size = New Size(400, 200)
 
-        container = New Panel With {
-            .Dock = DockStyle.Fill,
-            .BackColor = Color.White
+        With Me
+            .AutoSize = True
+            .AutoSizeMode = AutoSizeMode.GrowAndShrink
+        End With
+
+        dialogOverlay = New BaseDialogOverlay(targetPanel)
+
+        InitializeDialogUI()
+    End Sub
+
+    ' ==== CONTENT ======
+
+    Private lblTitle As BaseLabel
+    Private lblDescription As BaseLabel
+    Private picIcon As PictureBox
+    Private btnConfirm As BaseButton
+    Private btnCancel As BaseButton
+    Private buttonTable As TableLayoutPanel
+    Private subContainer As PrimaryFlowLayoutPanel
+
+    Public Property Result As DialogResultType = DialogResultType.None
+    Public Event DialogClosed(result As DialogResultType)
+
+    Private Sub InitializeDialogUI()
+
+        subContainer = New PrimaryFlowLayoutPanel()
+
+        With subContainer
+
+            .Padding = New Padding(16)
+            .FlowDirection = FlowDirection.TopDown
+            .AutoSize = True
+            .AutoSizeMode = AutoSizeMode.GrowAndShrink
+            .Margin = Padding.Empty
+
+        End With
+
+        ' TITLE
+        lblTitle = New BaseLabel()
+        With lblTitle
+            .SetSmall()
+            .Anchor = AnchorStyles.None
+            .TextAlign = ContentAlignment.MiddleCenter
+        End With
+
+        ' ICON
+        picIcon = New PictureBox With {
+            .SizeMode = PictureBoxSizeMode.CenterImage,
+            .Dock = DockStyle.Top
         }
 
-        Controls.Add(container)
+        ' DESCRIPTION
+        lblDescription = New BaseLabel()
+        With lblDescription
+            .SetSmall()
+            .TextAlign = ContentAlignment.MiddleCenter
+             .Anchor = AnchorStyles.None
+        End With
 
-        overlay = New BaseDialogOverlay(targetPanel)
+        ' BUTTON TABLE (2 columns)
+        buttonTable = New TableLayoutPanel With {
+            .AutoSize = True,
+            .AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            .ColumnCount = 2
+        }
+
+        buttonTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50))
+        buttonTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50))
+
+        ' BUTTONS
+        btnConfirm = New BaseButton()
+        With btnConfirm
+            .Text = Strings.BTN_CONFIRM
+            .Dock = DockStyle.Fill
+            .SetPrimary()
+        End With
+
+        btnCancel = New BaseButton()
+
+        With btnCancel
+            .Text = Strings.BTN_CANCEL
+            .Dock = DockStyle.Fill
+            .SetDanger()
+        End With
+
+        AddHandler btnConfirm.Click, Sub()
+                                         Result = DialogResultType.Confirm
+                                         RaiseEvent DialogClosed(Result)
+                                         Me.Close()
+                                     End Sub
+
+        AddHandler btnCancel.Click, Sub()
+                                        Result = DialogResultType.Cancel
+                                        RaiseEvent DialogClosed(Result)
+                                        Me.Close()
+                                    End Sub
+
+        buttonTable.Controls.Add(btnCancel, 0, 0)
+        buttonTable.Controls.Add(btnConfirm, 1, 0)
+
+
+        Me.Controls.Add(subContainer)
+
+        With subContainer.Controls
+            .Add(lblTitle)
+            .Add(picIcon)
+            .Add(lblDescription)
+
+            .Add(buttonTable)
+        End With
+
+    End Sub
+
+    Public Sub SetTitle(text As String)
+        lblTitle.Text = text
+    End Sub
+
+    Public Sub SetMessage(text As String)
+        lblDescription.Text = text
+    End Sub
+
+    Public Sub SetIcon(img As Image)
+        picIcon.Image = img
+    End Sub
+
+    Public Sub SetConfirmVisible(visible As Boolean)
+        btnConfirm.Visible = visible
+    End Sub
+
+    ' UTILITIES
+
+    Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
+        If dialogOverlay Is Nothing OrElse dialogOverlay.IsDisposed Then Return
+
+        Dim center As Point = New Point(
+        dialogOverlay.Left + (dialogOverlay.Width - Me.Width) \ 2,
+        dialogOverlay.Top + (dialogOverlay.Height - Me.Height) \ 2
+    )
+        Me.Location = center
     End Sub
 
     Public Sub ShowDialogBounded()
-        overlay.Show()
+        dialogOverlay.Show()
 
-        AddHandler overlay.BoundsChanged, AddressOf SyncDialogPosition
+        AddHandler dialogOverlay.BoundsChanged, AddressOf SyncDialogPosition
 
-        Me.Owner = overlay
+        Me.Owner = dialogOverlay
         Me.Show()
 
         SyncDialogPosition(Nothing, EventArgs.Empty)
@@ -226,8 +375,10 @@ Public Class BaseDialog
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         MyBase.OnFormClosed(e)
-        If overlay IsNot Nothing AndAlso Not overlay.IsDisposed Then
-            overlay.Close()
+
+        If dialogOverlay IsNot Nothing AndAlso Not dialogOverlay.IsDisposed Then
+            dialogOverlay.Hide()
+            dialogOverlay.Dispose()
         End If
     End Sub
 
@@ -238,17 +389,6 @@ Public Class BaseDialog
             Me.Focus()
             Me.BringToFront()
         End If
-    End Sub
-
-    Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
-        If overlay Is Nothing OrElse overlay.IsDisposed Then Return
-
-        Dim center As Point = New Point(
-        overlay.Left + (overlay.Width - Me.Width) \ 2,
-        overlay.Top + (overlay.Height - Me.Height) \ 2
-    )
-
-        Me.Location = center
     End Sub
 
 End Class
@@ -301,3 +441,6 @@ Public Class BaseDialogOverlay
     End Sub
 
 End Class
+
+
+

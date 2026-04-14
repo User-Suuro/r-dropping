@@ -28,6 +28,9 @@
 
     ' BUTTONS
     Public Shared BTN_SUBMIT = "Submit"
+    Public Shared BTN_CANCEL = "Cancel"
+    Public Shared BTN_CLOSE = "Close"
+    Public Shared BTN_CONFIRM = "Confirm"
 
 
 End Class
