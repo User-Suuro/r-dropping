@@ -158,6 +158,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="models\DbConfig.vb" />
+    <Compile Include="routes\root.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="utils\config.vb" />
     <Compile Include="utils\db.vb" />
     <Compile Include="Form1.vb">
@@ -188,6 +191,7 @@
       <DependentUpon>Resource1.resx</DependentUpon>
     </Compile>
     <Compile Include="utils\layout.vb" />
+    <Compile Include="utils\navigation.vb" />
     <Compile Include="utils\values\styles.vb" />
     <Compile Include="utils\values\dimen.vb" />
     <Compile Include="utils\values\strings.vb" />
@@ -224,7 +228,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="routes\dashboard\" />
-    <Folder Include="routes\root\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

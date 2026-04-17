@@ -1,12 +1,14 @@
 ﻿
 Public Class Form1
+    Public nav As NavigationManager
 
+    Public Shared Instance As Form1
     Public mainPanel As New PrimaryPanel()
-
     ' CONFIG ELEMENTS
 
     Private configContainerPanel As New PrimaryPanel()
     Private configSubPanel As New PrimaryFlowLayoutPanel()
+
 
     Private serverInput As New BaseInputPanel()
     Private uidInput As New BaseInputPanel()
@@ -15,14 +17,14 @@ Public Class Form1
     Private dbPortInput As New BaseInputPanel()
 
     Private btnSubmit As New BaseButton()
-
     Private configVal As New DbConfig()
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
         ' main container
-
+        Instance = Me
         mainPanel.Dock = DockStyle.Fill
+        nav = New NavigationManager(mainPanel)
 
         With Me
             .WindowState = FormWindowState.Maximized
@@ -31,6 +33,7 @@ Public Class Form1
             .MinimumSize = Dimen.MIN_RES
             .Text = Strings.APP_NAME
             .Controls.Add(mainPanel)
+            .Padding = Padding.Empty
         End With
 
         Themes.ApplyLightTheme()
@@ -76,28 +79,7 @@ Public Class Form1
 
         ' Initialize Config
         ConfigManager.EnsureConfigExists(Of DbConfig)()
-
-        '
-
-
-        'DialogTypes.Apply(dlg,
-        '                  DialogType.Confirmation,
-        '                  "delete record",
-        '                  "are you sure you want to delete this?")
-
-        'AddHandler dlg.DialogClosed,
-        '    Sub(result)
-
-        '        If result = DialogResultType.Confirm Then
-        '            DeleteRecord()
-        '        End If
-
-        '    End Sub
-
-        'dlg.ShowDialogBounded()
     End Sub
-
-
 
     Private Sub renderConfigPanelContent()
 
@@ -166,8 +148,8 @@ Public Class Form1
         AddHandler btnSubmit.Click, AddressOf SaveConfig
     End Sub
 
-    Private Sub SaveConfig()
-        Dim dlg As New BaseDialog(Me.mainPanel)
+    Private Async Sub SaveConfig()
+        Dim dlg As New BaseDialog()
 
 
         If Not ValidateAllInputs() Then
@@ -184,15 +166,19 @@ Public Class Form1
             End With
 
             ConfigManager.Save(configVal)
-
-
-
             DialogTypes.Apply(dlg,
                              DialogType.Info,
                              "Success Connected to Database",
                              "The Configuration was saved locally")
 
-            dlg.ShowDialog()
+            Dim result = Await dlg.ShowBaseDialogAsync(Me)
+
+            If result = DialogResultType.Confirm Then
+                nav.GoToPage(New root())
+            End If
+
+
+
         Catch ex As Exception
 
             DialogTypes.Apply(dlg,
@@ -216,29 +202,27 @@ Public Class Form1
         Return Inputs.All(Function(i) i.ValidateInput())
     End Function
 
+
 End Class
+
 
 ' ===== DIALOG COMPONENT  =====
 
 Public Class BaseDialog
     Inherits Form
 
-    Private dialogOverlay As BaseDialogOverlay
+
+    Private ownerForm As Form
 
 
-    Public Sub New(targetPanel As Control)
+    Public Sub New()
         FormBorderStyle = FormBorderStyle.None
-        StartPosition = FormStartPosition.Manual
         ShowInTaskbar = False
         BackColor = Color.White
-
-        With Me
-            .AutoSize = True
-            .AutoSizeMode = AutoSizeMode.GrowAndShrink
-        End With
-
-        dialogOverlay = New BaseDialogOverlay(targetPanel)
-
+        StartPosition = FormStartPosition.CenterScreen
+        BringToFront()
+        AutoSize = True
+        AutoSizeMode = AutoSizeMode.GrowAndShrink
         InitializeDialogUI()
     End Sub
 
@@ -255,18 +239,17 @@ Public Class BaseDialog
     Public Property Result As DialogResultType = DialogResultType.None
     Public Event DialogClosed(result As DialogResultType)
 
-    Private Sub InitializeDialogUI()
 
+    Private Sub InitializeDialogUI()
         subContainer = New PrimaryFlowLayoutPanel()
 
         With subContainer
-
             .Padding = New Padding(16)
             .FlowDirection = FlowDirection.TopDown
             .AutoSize = True
             .AutoSizeMode = AutoSizeMode.GrowAndShrink
             .Margin = Padding.Empty
-
+            .BorderStyle = BorderStyle.FixedSingle
         End With
 
         ' TITLE
@@ -315,7 +298,6 @@ Public Class BaseDialog
         End With
 
         btnCancel = New BaseButton()
-
         With btnCancel
             .Text = Strings.BTN_CANCEL
             .Dock = DockStyle.Fill
@@ -327,12 +309,14 @@ Public Class BaseDialog
         AddHandler btnConfirm.Click, Sub()
                                          Result = DialogResultType.Confirm
                                          RaiseEvent DialogClosed(Result)
+                                         SetCtrl(ownerForm, True)
                                          Me.Close()
                                      End Sub
 
         AddHandler btnCancel.Click, Sub()
                                         Result = DialogResultType.Cancel
                                         RaiseEvent DialogClosed(Result)
+                                        SetCtrl(ownerForm, True)
                                         Me.Close()
                                     End Sub
 
@@ -345,10 +329,8 @@ Public Class BaseDialog
             .Add(lblTitle)
             .Add(picIcon)
             .Add(lblDescription)
-
             .Add(buttonTable)
         End With
-
     End Sub
 
     Public Sub SetTitle(text As String)
@@ -372,6 +354,7 @@ Public Class BaseDialog
         btnCancel.Visible = visible
         UpdateButtonLayout()
     End Sub
+
     Public Sub SetConfirmText(text As String)
         btnConfirm.Text = text
     End Sub
@@ -380,7 +363,13 @@ Public Class BaseDialog
         btnCancel.Text = text
     End Sub
 
-    ' UTILITIES
+    Public Sub SetCtrl(form As Form, setTo As Boolean)
+        For Each ctrl As Control In form.Controls
+            ctrl.Enabled = setTo
+        Next
+
+    End Sub
+
 
     Private Sub UpdateButtonLayout()
         buttonTable.ColumnStyles.Clear()
@@ -408,94 +397,56 @@ Public Class BaseDialog
         Next
     End Sub
 
-    Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
-        If dialogOverlay Is Nothing OrElse dialogOverlay.IsDisposed Then Return
 
-        Dim center As Point = New Point(
-        dialogOverlay.Left + (dialogOverlay.Width - Me.Width) \ 2,
-        dialogOverlay.Top + (dialogOverlay.Height - Me.Height) \ 2
+    Public Sub ShowBaseDialog(owner As Form)
+
+
+
+        ownerForm = owner
+
+        Me.StartPosition = FormStartPosition.Manual
+        Me.Show(owner)
+
+
+        SetCtrl(ownerForm, False)
+
+        CenterToOwner()
+        Me.BringToFront()
+
+        AddHandler owner.Resize, AddressOf SyncDialogPosition
+        AddHandler owner.LocationChanged, AddressOf SyncDialogPosition
+
+    End Sub
+
+    Public Function ShowBaseDialogAsync(owner As Form) As Task(Of DialogResultType)
+
+        Dim tcs As New TaskCompletionSource(Of DialogResultType)
+
+        AddHandler Me.DialogClosed,
+        Sub(result)
+            tcs.TrySetResult(result)
+        End Sub
+
+        ShowBaseDialog(owner)
+
+        Return tcs.Task
+    End Function
+
+
+    Private Sub CenterToOwner()
+        If ownerForm Is Nothing OrElse ownerForm.IsDisposed Then Return
+
+        Dim rect = ownerForm.Bounds
+
+        Me.Location = New Point(
+        rect.Left + (rect.Width - Me.Width) \ 2,
+        rect.Top + (rect.Height - Me.Height) \ 2
     )
-        Me.Location = center
     End Sub
 
-    Public Sub ShowDialog()
-        dialogOverlay.Show()
-
-        AddHandler dialogOverlay.BoundsChanged, AddressOf SyncDialogPosition
-
-        Me.Owner = dialogOverlay
-        Me.Show()
-
-        SyncDialogPosition(Nothing, EventArgs.Empty)
+    Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
+        CenterToOwner()
     End Sub
-
-    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        MyBase.OnFormClosed(e)
-
-        If dialogOverlay IsNot Nothing AndAlso Not dialogOverlay.IsDisposed Then
-            dialogOverlay.Hide()
-            dialogOverlay.Dispose()
-        End If
-    End Sub
-
-    Protected Overrides Sub OnDeactivate(e As EventArgs)
-        MyBase.OnDeactivate(e)
-
-        If Me.Visible Then
-            Me.Focus()
-            Me.BringToFront()
-        End If
-    End Sub
-
-End Class
-
-Public Class BaseDialogOverlay
-    Inherits Form
-
-    Private ReadOnly _targetPanel As Control
-    Private ReadOnly _parentForm As Form
-    Public Event BoundsChanged As EventHandler
-
-    Public Sub New(targetPanel As Control)
-        _targetPanel = targetPanel
-        _parentForm = targetPanel.FindForm()
-
-        ' FORM CONFIG
-        FormBorderStyle = FormBorderStyle.None
-        ShowInTaskbar = False
-        TopMost = False
-        StartPosition = FormStartPosition.Manual
-
-        BackColor = Color.Black
-        Opacity = 0.45R
-
-        If _parentForm IsNot Nothing Then
-            Owner = _parentForm
-        End If
-
-        AddHandler _targetPanel.SizeChanged, AddressOf SyncBounds
-        AddHandler _targetPanel.LocationChanged, AddressOf SyncBounds
-
-        If _parentForm IsNot Nothing Then
-            AddHandler _parentForm.LocationChanged, AddressOf SyncBounds
-            AddHandler _parentForm.SizeChanged, AddressOf SyncBounds
-        End If
-    End Sub
-
-    Protected Overrides Sub OnShown(e As EventArgs)
-        MyBase.OnShown(e)
-        SyncBounds(Nothing, EventArgs.Empty)
-    End Sub
-
-    Private Sub SyncBounds(sender As Object, e As EventArgs)
-        If _targetPanel Is Nothing OrElse _targetPanel.IsDisposed Then Return
-
-        Dim rect As Rectangle = _targetPanel.RectangleToScreen(_targetPanel.ClientRectangle)
-        Bounds = rect
-
-        RaiseEvent BoundsChanged(Me, EventArgs.Empty)
-    End Sub
-
 End Class
 
 
