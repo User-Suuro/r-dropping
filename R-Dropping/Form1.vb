@@ -1,4 +1,6 @@
 ﻿
+Imports Mysqlx.XDevAPI.Common
+
 Public Class Form1
     Public nav As NavigationManager
 
@@ -106,8 +108,6 @@ Public Class Form1
             .InputControl.PlaceholderText = Strings.DB_PASS_PLACEHOLDER
             .InputControl.UseSystemPasswordChar = True
             .InputControl.Text = configVal.DB_PWD
-            .SetValidator(
-            New InputValidator().Required())
         End With
 
         With dbNameInput
@@ -151,7 +151,6 @@ Public Class Form1
     Private Async Sub SaveConfig()
         Dim dlg As New BaseDialog()
 
-
         If Not ValidateAllInputs() Then
             Exit Sub
         End If
@@ -165,28 +164,68 @@ Public Class Form1
                 .DB_NAME = dbNameInput.InputControl.Text
             End With
 
-            ConfigManager.Save(configVal)
-            DialogTypes.Apply(dlg,
-                             DialogType.Info,
-                             "Success Connected to Database",
-                             "The Configuration was saved locally")
+            Db.UpdateConnectionString(configVal.DB_SERVER,
+                                      configVal.DB_PORT,
+                                      configVal.DB_UID,
+                                      configVal.DB_PWD,
+                                      configVal.DB_NAME)
 
-            Dim result = Await dlg.ShowBaseDialogAsync(Me)
+            Dim loadingDlg As New BaseDialog()
 
-            If result = DialogResultType.Confirm Then
-                nav.GoToPage(New root())
+            Dim completed As Boolean = Await DialogTypes.ShowLoadingUntilAsync(
+                loadingDlg,
+                Me,
+                Async Function()
+                    Dim connected As Boolean = Await IsConnectedAsync()
+
+                    If connected Then
+                        loadingDlg.Close()
+
+                        DialogTypes.Apply(dlg,
+                          DialogType.Info,
+                          "Connected",
+                          "Sucessfully connected to Database")
+
+                        Dim result = Await dlg.ShowBaseDialogAsync(Me)
+
+                        If result = DialogResultType.Confirm Then
+                            nav.GoToPage(New root())
+                        End If
+                    Else
+                        DialogTypes.Apply(dlg,
+                          DialogType.Error,
+                          "Failed to Connect",
+                          "Please Try Again with Correct Values")
+
+                        dlg.ShowBaseDialog(Me)
+                    End If
+
+                End Function
+            )
+
+            If Not completed Then
+                Dim timeoutDlg As New BaseDialog()
+
+                DialogTypes.Apply(
+                    timeoutDlg,
+                    DialogType.Error,
+                    "Timeout",
+                    "The connection took too long. Please try again."
+                )
+
+                timeoutDlg.ShowBaseDialog(Me)
+                Return
             End If
 
-
-
         Catch ex As Exception
+
 
             DialogTypes.Apply(dlg,
                               DialogType.Error,
                               "Error Saving Configuration",
                               "An error occurred while saving the configuration. Please try again.")
 
-            dlg.ShowDialog()
+            dlg.ShowBaseDialog(Me)
         End Try
     End Sub
 
@@ -236,11 +275,16 @@ Public Class BaseDialog
     Private buttonTable As TableLayoutPanel
     Private subContainer As PrimaryFlowLayoutPanel
 
+    Private overlay As Panel
+    Private ownerOverlay As DoubleBufferedPanel
+
     Public Property Result As DialogResultType = DialogResultType.None
     Public Event DialogClosed(result As DialogResultType)
 
 
     Private Sub InitializeDialogUI()
+
+
         subContainer = New PrimaryFlowLayoutPanel()
 
         With subContainer
@@ -309,14 +353,12 @@ Public Class BaseDialog
         AddHandler btnConfirm.Click, Sub()
                                          Result = DialogResultType.Confirm
                                          RaiseEvent DialogClosed(Result)
-                                         SetCtrl(ownerForm, True)
                                          Me.Close()
                                      End Sub
 
         AddHandler btnCancel.Click, Sub()
                                         Result = DialogResultType.Cancel
                                         RaiseEvent DialogClosed(Result)
-                                        SetCtrl(ownerForm, True)
                                         Me.Close()
                                     End Sub
 
@@ -324,6 +366,7 @@ Public Class BaseDialog
         buttonTable.Controls.Add(btnConfirm, 1, 0)
 
         Me.Controls.Add(subContainer)
+
 
         With subContainer.Controls
             .Add(lblTitle)
@@ -399,9 +442,6 @@ Public Class BaseDialog
 
 
     Public Sub ShowBaseDialog(owner As Form)
-
-
-
         ownerForm = owner
 
         Me.StartPosition = FormStartPosition.Manual
@@ -446,6 +486,11 @@ Public Class BaseDialog
 
     Private Sub SyncDialogPosition(sender As Object, e As EventArgs)
         CenterToOwner()
+    End Sub
+
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        MyBase.OnFormClosed(e)
+        SetCtrl(ownerForm, True)
     End Sub
 End Class
 

@@ -6,6 +6,8 @@
     Private Sidebar As FlowLayoutPanel
     Private MainContent As Panel
 
+    Public rootNav As NavigationManager
+
 
     Public Sub New()
         Me.Dock = DockStyle.Fill
@@ -46,7 +48,7 @@
             .Margin = Padding.Empty
         }
 
-        Dim homeBtn As New NavBtn("Home", SidebarContainer.Width)
+        Dim homeBtn As New NavBtn("Dashboard", SidebarContainer.Width)
         Dim dropOffBtn As New NavBtn("Drop-off", SidebarContainer.Width)
         Dim employeesBtn As New NavBtn("Employees", SidebarContainer.Width)
         Dim sellersBtn As New NavBtn("Sellers", SidebarContainer.Width)
@@ -54,19 +56,26 @@
         Dim pricingBtn As New NavBtn("Pricing", SidebarContainer.Width)
         Dim storageBtn As New NavBtn("Storage", SidebarContainer.Width)
 
+        MainContent = New Panel With {
+            .Dock = DockStyle.Fill
+        }
+
+        rootNav = New NavigationManager(MainContent)
+
+
         AddHandler homeBtn.ButtonControl.Click,
         Sub(sender, e)
-            showUnavailablePage()
+            rootNav.GoToPage(New SampleDGVPage())
         End Sub
 
         AddHandler dropOffBtn.ButtonControl.Click,
         Sub(sender, e)
-            showUnavailablePage()
+            rootNav.GoToPage(New SampleComboPage())
         End Sub
 
         AddHandler employeesBtn.ButtonControl.Click,
         Sub(sender, e)
-            showUnavailablePage()
+
         End Sub
 
         AddHandler sellersBtn.ButtonControl.Click,
@@ -111,9 +120,6 @@
         })
 
         ' ===== MAIN =====
-        MainContent = New Panel With {
-            .Dock = DockStyle.Fill
-        }
 
         ' ===== ADD ROOT =====
         Me.Controls.Add(MainContent)

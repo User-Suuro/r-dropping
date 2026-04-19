@@ -1,7 +1,7 @@
 # ENV for localhost
 
-DB_SERVER=asdad
-DB_UID=dadasdas
-DB_PORT=adada
-DB_NAME=asdasd
-DB_PWD=dadada
+DB_SERVER=127.0.0.1
+DB_UID=root
+DB_PORT=3306
+DB_NAME=r-dropping
+DB_PWD=

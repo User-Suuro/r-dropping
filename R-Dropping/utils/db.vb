@@ -7,121 +7,107 @@ Module Db
     Public cmd As New MySqlCommand
     Public cmdRead As MySqlDataReader
 
-    Public db_server As String = "'192.168.150.164'"
-    Public db_uid As String = "'admin'"
-    Public db_pwd As String = "'admin'"
-    Public db_name As String = "'studentdatabase'"
-    Public strConnection As String = "server=" & db_server & ";uid=" & db_uid & ";password=" & db_pwd & ";database=" & db_name & ";" & "allowuservariables='True';"
+    Public db_server As String
+    Public db_uid As String
+    Public db_pwd As String
+    Public db_name As String
+    Public db_port As String
+    Public strConnection As String
 
-    Public Structure LoggedUser
-        Dim id As Integer
-        Dim name As String
-        Dim position As String
-        Dim username As String
-        Dim password As String
-        Dim type As Integer
-    End Structure
 
-    Public Sub UpdateConnectionString()
+
+
+    Public Sub UpdateConnectionString(server As String,
+                                      port As String,
+                                      uid As String,
+                                      password As String,
+                                      database As String)
+
+            db_server = server
+            db_port = port
+            db_uid = uid
+            db_pwd = password
+            db_name = database
+
+            strConnection =
+            "server=" & db_server & ";" &
+            "port=" & db_port & ";" &
+            "uid=" & db_uid & ";" &
+            "password=" & db_pwd & ";" &
+            "database=" & db_name & ";" &
+            "Allow User Variables=True;"
+
+        End Sub
+
+
+
+    Public Async Function OpenConnAsync() As Task(Of Boolean)
+
         Try
-            Dim config As String = System.IO.Directory.GetCurrentDirectory & "\config.txt"
-            Dim text As String = Nothing
-            If System.IO.File.Exists(config) Then
-                Using reader As System.IO.StreamReader = New System.IO.StreamReader(config)
-
-                    text = reader.ReadToEnd
-                End Using
-                Dim arr_text() As String = Split(text, vbCrLf)
-
-                strConnection = "server=" & Split(arr_text(0), "=")(1) & ";uid=" & Split(arr_text(1), "=")(1) & ";password=" & Split(arr_text(2), "=")(1) & ";database=" & Split(arr_text(3), "=")(1) & ";" & "allowuservariables='True';"
-            Else
-                MsgBox("Do not exist")
+            If conn Is Nothing Then
+                conn = New MySqlConnection()
             End If
+
+            If conn.State = ConnectionState.Open Then
+                Await conn.CloseAsync()
+            End If
+
+            conn.ConnectionString = strConnection
+            Await conn.OpenAsync()
+
+            Return True
+
         Catch ex As Exception
             MsgBox(ex.Message, MsgBoxStyle.Critical)
-        End Try
-    End Sub
-
-    Public CurrentLoggedUser As LoggedUser = Nothing
-    Public Sub openConn(ByVal db_name As String)
-        Try
-            With conn
-                If .State = ConnectionState.Open Then .Close()
-                .ConnectionString = strConnection
-                .Open()
-            End With
-        Catch EX As Exception
-            MsgBox(EX.Message, MsgBoxStyle.Critical)
-        End Try
-    End Sub
-
-    Public Sub readQuery(ByVal sql As String)
-        Try
-            openConn(db_name)
-            With cmd
-                .Connection = conn
-                .CommandText = sql
-                cmdRead = .ExecuteReader
-            End With
-        Catch EX As Exception
-            MsgBox(EX.Message, MsgBoxStyle.Critical)
-        End Try
-    End Sub
-
-    Public Function isConnectedToLocalServer() As Boolean
-        Dim result As Boolean = False
-        Try
-            myadocon = New MySqlConnection
-            myadocon.ConnectionString = strConnection
-            Try
-                myadocon.Open()
-                If myadocon.State = ConnectionState.Open Then
-                    result = True
-                Else
-                    result = False
-                End If
-            Catch ex As Exception
-                Return False
-            End Try
-            If myadocon.State = ConnectionState.Open Then
-                myadocon.Close()
-            End If
-        Catch
             Return False
         End Try
-        Return result
+
     End Function
 
-    Function LoadToDGV(ByVal query As String, ByVal dgv As DataGridView) As Integer
-        Try
-            readQuery(query)
-            Dim dt As DataTable = New DataTable
-            dt.Load(cmdRead)
-            dgv.DataSource = dt
-            dgv.Refresh()
-            Return dgv.Rows.Count
-        Catch ex As Exception
-            MsgBox(ex.Message, MsgBoxStyle.Critical)
-        End Try
-        Return 0
-    End Function
+    Public Async Function ReadQueryAsync(sql As String) As Task(Of MySqlDataReader)
 
-    Function LoadToDGVForDisplay(ByVal query As String, ByVal dgv As DataGridView) As Integer
         Try
-            readQuery(query)
-            Dim dt As DataTable = New DataTable
-            dt.Load(cmdRead)
-            dgv.DataSource = dt
-            dgv.Refresh()
-            If dgv.ColumnCount > 1 Then
-                dgv.Columns(0).Visible = False
+            Dim opened As Boolean = Await OpenConnAsync()
+
+            If opened = False Then
+                Return Nothing
             End If
-            Return dgv.Rows.Count
+
+            cmd = New MySqlCommand(sql, conn)
+
+            cmdRead = CType(Await cmd.ExecuteReaderAsync(), MySqlDataReader)
+
+            Return cmdRead
+
         Catch ex As Exception
             MsgBox(ex.Message, MsgBoxStyle.Critical)
+            Return Nothing
         End Try
-        Return 0
+
     End Function
+
+    Public Async Function IsConnectedAsync() As Task(Of Boolean)
+
+        Try
+            Using testConn As New MySqlConnection(strConnection)
+
+                Await testConn.OpenAsync()
+
+                If testConn.State = ConnectionState.Open Then
+                    Await testConn.CloseAsync()
+                    Return True
+                End If
+
+            End Using
+
+            Return False
+
+        Catch ex As Exception
+            Return False
+        End Try
+
+    End Function
+
 
     Public Function Encrypt(ByVal clearText As String) As String
 
@@ -164,14 +150,5 @@ Module Db
         Return cipherText
     End Function
 
-    Sub Logs(ByVal transaction As String, Optional ByVal events As String = "*_Click")
-        Try
-            readQuery(String.Format("INSERT INTO `logs`(`dt`, `user_accounts_id`, `event`, `transactions`) VALUES ({0},{1},'{2}','{3}')", "now()",
-                                    CurrentLoggedUser.id,
-                                    events,
-                                    transaction))
-        Catch ex As Exception
-            MsgBox(ex.Message)
-        End Try
-    End Sub
+
 End Module

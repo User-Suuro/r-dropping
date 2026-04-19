@@ -136,6 +136,15 @@
     <Compile Include="components\BaseButton.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="components\BaseCmb.Designer.vb">
+      <DependentUpon>BaseCmb.vb</DependentUpon>
+    </Compile>
+    <Compile Include="components\BaseCmb.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="components\BaseDGV.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="components\BaseFlowLayout.Designer.vb">
       <DependentUpon>BaseFlowLayout.vb</DependentUpon>
     </Compile>
@@ -158,7 +167,22 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="models\DbConfig.vb" />
+    <Compile Include="routes\employees\EmployeesPage.Designer.vb">
+      <DependentUpon>EmployeesPage.vb</DependentUpon>
+    </Compile>
+    <Compile Include="routes\employees\EmployeesPage.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="routes\sample\SampleCMBPage.Designer.vb">
+      <DependentUpon>SampleCMBPage.vb</DependentUpon>
+    </Compile>
+    <Compile Include="routes\sample\SampleCMBPage.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="routes\root.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="routes\sample\SampleDGVPage.vb">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="utils\config.vb" />
@@ -197,6 +221,9 @@
     <Compile Include="utils\values\strings.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="components\BaseCmb.resx">
+      <DependentUpon>BaseCmb.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.vb</DependentUpon>
     </EmbeddedResource>
