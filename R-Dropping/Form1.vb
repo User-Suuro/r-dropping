@@ -1,22 +1,24 @@
 ﻿
-Imports Mysqlx.XDevAPI.Common
 
 Public Class Form1
     Public nav As NavigationManager
 
     Public Shared Instance As Form1
     Public mainPanel As New PrimaryPanel()
-    ' CONFIG ELEMENTS
 
     Private configContainerPanel As New PrimaryPanel()
     Private configSubPanel As New PrimaryFlowLayoutPanel()
-
 
     Private serverInput As New BaseInputPanel()
     Private uidInput As New BaseInputPanel()
     Private pwdInput As New BaseInputPanel()
     Private dbNameInput As New BaseInputPanel()
     Private dbPortInput As New BaseInputPanel()
+
+    Private serverField As ValidationPanel
+    Private uidField As ValidationPanel
+    Private dbNameField As ValidationPanel
+    Private dbPortField As ValidationPanel
 
     Private btnSubmit As New BaseButton()
     Private configVal As New DbConfig()
@@ -80,6 +82,7 @@ Public Class Form1
         LayoutHelper.EnableAutoCenter(configContainerPanel)
 
         ' Initialize Config
+
         ConfigManager.EnsureConfigExists(Of DbConfig)()
     End Sub
 
@@ -91,17 +94,20 @@ Public Class Form1
             .LabelText = Strings.SERVER_LBL
             .InputControl.PlaceholderText = Strings.SERVER_PLACEHOLDER
             .InputControl.Text = configVal.DB_SERVER
-            .SetValidator(
-            New InputValidator().Required())
+
         End With
+
+        serverField = New ValidationPanel(serverInput)
+        serverField.SetValidator(New InputValidator().Required())
 
         With uidInput
             .LabelText = Strings.UID_LBL
             .InputControl.PlaceholderText = Strings.UID_PLACEHOLDER
             .InputControl.Text = configVal.DB_UID
-            .SetValidator(
-            New InputValidator().Required())
         End With
+
+        uidField = New ValidationPanel(uidInput)
+        uidField.SetValidator(New InputValidator().Required())
 
         With pwdInput
             .LabelText = Strings.DB_PASS_LBL
@@ -114,34 +120,36 @@ Public Class Form1
             .LabelText = Strings.DB_NAME
             .InputControl.PlaceholderText = Strings.DB_NAME_PLACEHOLDER
             .InputControl.Text = configVal.DB_NAME
-            .SetValidator(
-            New InputValidator().Required())
         End With
+
+        dbNameField = New ValidationPanel(dbNameInput)
+        dbNameField.SetValidator(New InputValidator().Required())
 
         With dbPortInput
             .LabelText = Strings.DB_PORT
             .InputControl.PlaceholderText = Strings.DB_PORT_PLACEHOLDER
             .InputControl.Text = configVal.DB_PORT
-            .SetValidator(
-            New InputValidator().Required())
         End With
+
+        dbPortField = New ValidationPanel(dbPortInput)
+        dbPortField.SetValidator(New InputValidator().Required())
 
         With btnSubmit
             .Text = Strings.BTN_CONNECT
             .SetPrimary()
+            .Margin = New Padding(0, 8, 0, 0)
         End With
 
         Dim overlay As Panel = OverlayPanel.CreateOverlay()
 
         overlay.Dock = DockStyle.Fill
 
-
         With configSubPanel.Controls
-            .Add(serverInput)
-            .Add(dbPortInput)
-            .Add(uidInput)
+            .Add(serverField)
+            .Add(dbPortField)
+            .Add(uidField)
             .Add(pwdInput)
-            .Add(dbNameInput)
+            .Add(dbNameField)
             .Add(btnSubmit)
         End With
 
@@ -164,13 +172,17 @@ Public Class Form1
                 .DB_NAME = dbNameInput.InputControl.Text
             End With
 
+            Dim loadingDlg As New BaseDialog()
+
             Db.UpdateConnectionString(configVal.DB_SERVER,
                                       configVal.DB_PORT,
                                       configVal.DB_UID,
                                       configVal.DB_PWD,
                                       configVal.DB_NAME)
 
-            Dim loadingDlg As New BaseDialog()
+
+            ConfigManager.Save(configVal)
+
 
             Dim completed As Boolean = Await DialogTypes.ShowLoadingUntilAsync(
                 loadingDlg,
@@ -179,8 +191,6 @@ Public Class Form1
                     Dim connected As Boolean = Await IsConnectedAsync()
 
                     If connected Then
-                        loadingDlg.Close()
-
                         DialogTypes.Apply(dlg,
                           DialogType.Info,
                           "Connected",
@@ -203,23 +213,7 @@ Public Class Form1
                 End Function
             )
 
-            If Not completed Then
-                Dim timeoutDlg As New BaseDialog()
-
-                DialogTypes.Apply(
-                    timeoutDlg,
-                    DialogType.Error,
-                    "Timeout",
-                    "The connection took too long. Please try again."
-                )
-
-                timeoutDlg.ShowBaseDialog(Me)
-                Return
-            End If
-
         Catch ex As Exception
-
-
             DialogTypes.Apply(dlg,
                               DialogType.Error,
                               "Error Saving Configuration",
@@ -230,15 +224,7 @@ Public Class Form1
     End Sub
 
     Private Function ValidateAllInputs() As Boolean
-
-        Dim Inputs As New List(Of BaseInputPanel)
-
-        Inputs.Add(serverInput)
-        Inputs.Add(uidInput)
-        Inputs.Add(pwdInput)
-        Inputs.Add(dbNameInput)
-
-        Return Inputs.All(Function(i) i.ValidateInput())
+        Return {serverField, uidField, dbNameField, dbPortField}.All(Function(f) f.ValidateInput())
     End Function
 
 
@@ -250,9 +236,7 @@ End Class
 Public Class BaseDialog
     Inherits Form
 
-
     Private ownerForm As Form
-
 
     Public Sub New()
         FormBorderStyle = FormBorderStyle.None

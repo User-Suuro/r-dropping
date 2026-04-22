@@ -166,9 +166,13 @@
     <Compile Include="components\DialogTypes.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="components\ValidationPanel.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="models\DbConfig.vb" />
-    <Compile Include="routes\employees\EmployeesPage.Designer.vb">
-      <DependentUpon>EmployeesPage.vb</DependentUpon>
+    <Compile Include="models\EmployeeTable.vb" />
+    <Compile Include="routes\employees\EmployeeForm.vb">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="routes\employees\EmployeesPage.vb">
       <SubType>Component</SubType>
@@ -180,9 +184,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="routes\root.vb">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="routes\sample\SampleDGVPage.vb">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="utils\config.vb" />
@@ -237,6 +238,9 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resource1.Designer.vb</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="routes\employees\EmployeeForm.resx">
+      <DependentUpon>EmployeeForm.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

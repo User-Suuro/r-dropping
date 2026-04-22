@@ -14,9 +14,6 @@ Module Db
     Public db_port As String
     Public strConnection As String
 
-
-
-
     Public Sub UpdateConnectionString(server As String,
                                       port As String,
                                       uid As String,
@@ -64,16 +61,18 @@ Module Db
 
     End Function
 
-    Public Async Function ReadQueryAsync(sql As String) As Task(Of MySqlDataReader)
+    Public Async Function ReadQueryAsync(sql As String, params As Dictionary(Of String, Object)) As Task(Of MySqlDataReader)
 
         Try
-            Dim opened As Boolean = Await OpenConnAsync()
-
-            If opened = False Then
+            If Not Await OpenConnAsync() Then
                 Return Nothing
             End If
 
             cmd = New MySqlCommand(sql, conn)
+
+            For Each param In params
+                cmd.Parameters.AddWithValue(param.Key, param.Value)
+            Next
 
             cmdRead = CType(Await cmd.ExecuteReaderAsync(), MySqlDataReader)
 
@@ -82,6 +81,28 @@ Module Db
         Catch ex As Exception
             MsgBox(ex.Message, MsgBoxStyle.Critical)
             Return Nothing
+        End Try
+
+    End Function
+
+    Public Async Function ExecuteQueryAsync(sql As String, params As Dictionary(Of String, Object)) As Task(Of Integer)
+
+        Try
+            If Not Await OpenConnAsync() Then
+                Return 0
+            End If
+
+            cmd = New MySqlCommand(sql, conn)
+
+            For Each param In params
+                cmd.Parameters.AddWithValue(param.Key, param.Value)
+            Next
+
+            Return Await cmd.ExecuteNonQueryAsync()
+
+        Catch ex As Exception
+            MsgBox(ex.Message, MsgBoxStyle.Critical)
+            Return 0
         End Try
 
     End Function
@@ -107,7 +128,6 @@ Module Db
         End Try
 
     End Function
-
 
     Public Function Encrypt(ByVal clearText As String) As String
 
@@ -150,5 +170,8 @@ Module Db
         Return cipherText
     End Function
 
+    Public Function ToDbNull(value As String) As Object
+        Return If(String.IsNullOrWhiteSpace(value), DBNull.Value, value)
+    End Function
 
 End Module

@@ -5,7 +5,7 @@ Public Class BaseDGV
 
     Private ReadOnly _dgv As New Guna2DataGridView()
 
-    ' ── Toolbar (top) ─────────────────────────────────────────────────────────
+    ' ── Toolbar (top)
     Private _toolbarPanel As Panel
     Private _toolbarLayout As TableLayoutPanel
     Private _searchInput As Guna2TextBox
@@ -16,7 +16,7 @@ Public Class BaseDGV
     Private _deleteBtn As BaseButton
     Private _actionButtonsPanel As FlowLayoutPanel
 
-    ' ── Pagination (bottom) ───────────────────────────────────────────────────
+    ' ── Pagination (bottom)
     Private _paginationPanel As Panel
     Private _paginationLayout As TableLayoutPanel
     Private _pageSizeInput As Guna2TextBox
@@ -25,15 +25,16 @@ Public Class BaseDGV
     Private _prevPageBtn As BaseButton
     Private _nextPageBtn As BaseButton
     Private _lastPageBtn As BaseButton
+    Private _noResultsLabel As Label
 
-    ' ── State ─────────────────────────────────────────────────────────────────
+    ' ── States
     Private _originalDataTable As DataTable = Nothing
     Private _filteredDataTable As DataTable = Nothing
     Private _currentPage As Integer = 1
     Private _pageSize As Integer = 10
-    Private _isPaging As Boolean = False   ' Suppresses DataBindingComplete during ApplyPage
+    Private _isPaging As Boolean = False
 
-    ' ── Properties ───────────────────────────────────────────────────────────
+    ' ── Properties 
     Public ReadOnly Property DataGridView As Guna2DataGridView
         Get
             Return _dgv
@@ -95,7 +96,6 @@ Public Class BaseDGV
         End Get
     End Property
 
-    ' ── Constructor ───────────────────────────────────────────────────────────
     Public Sub New()
         MyBase.New()
         Me.Dock = DockStyle.Fill
@@ -103,12 +103,12 @@ Public Class BaseDGV
         SetupEventHandlers()
     End Sub
 
-    ' ── UI Setup ──────────────────────────────────────────────────────────────
+    ' ── UI Setup 
     Private Sub InitializeUI()
 
-        ' ════════════════════════════════════════════════
+        ' 
         '  TOP TOOLBAR
-        ' ════════════════════════════════════════════════
+        ' 
         _toolbarPanel = New Panel With {
             .Dock = DockStyle.Top,
             .Height = 60,
@@ -200,9 +200,9 @@ Public Class BaseDGV
         _toolbarLayout.Controls.Add(_actionButtonsPanel, 2, 0)
         _toolbarPanel.Controls.Add(_toolbarLayout)
 
-        ' ════════════════════════════════════════════════
+        ' 
         '  BOTTOM PAGINATION TOOLBAR
-        ' ════════════════════════════════════════════════
+        ' 
         _paginationPanel = New Panel With {
             .Dock = DockStyle.Bottom,
             .Height = 52,
@@ -247,7 +247,7 @@ Public Class BaseDGV
         _pageSizeInput = New Guna2TextBox With {
             .Text = _pageSize.ToString(),
             .Width = 55,
-            .Height = 38,
+            .Height = 32,
             .Font = New Font(Strings.FONT_FAMILY, Dimen.LABEL_SM),
             .FillColor = Color.White,
             .ForeColor = Colors.LblPrimary,
@@ -352,6 +352,18 @@ Public Class BaseDGV
             }
         End With
 
+        _noResultsLabel = New Label With {
+        .Text = "No results found",
+        .Font = New Font(Strings.FONT_FAMILY, 11, FontStyle.Regular),
+        .ForeColor = Colors.LblPrimary,
+        .BackColor = Colors.Background,
+        .TextAlign = ContentAlignment.MiddleCenter,
+        .Dock = DockStyle.Fill,
+        .Visible = False
+}
+        _dgv.Controls.Add(_noResultsLabel)
+        _noResultsLabel.BringToFront()
+
         ' Dock order: Bottom → Top → Fill (Fill must be last)
         Me.Controls.Add(_dgv)
         Me.Controls.Add(_paginationPanel)
@@ -380,7 +392,7 @@ Public Class BaseDGV
         AddHandler _pageSizeInput.Leave, AddressOf OnPageSizeLeave
     End Sub
 
-    ' ── DGV Handlers ──────────────────────────────────────────────────────────
+    ' ── DGV Handlers
     Private Sub OnDgvCellClick(sender As Object, e As DataGridViewCellEventArgs)
         If e.RowIndex < 0 Then Return
         _updateBtn.Visible = True
@@ -388,14 +400,13 @@ Public Class BaseDGV
     End Sub
 
     Private Sub OnDataBindingComplete(sender As Object, e As DataGridViewBindingCompleteEventArgs)
-        ' Skip when ApplyPage is the one setting DataSource — it manages its own state
         If _isPaging Then Return
         _dgv.ClearSelection()
         _updateBtn.Visible = False
         _deleteBtn.Visible = False
     End Sub
 
-    ' ── Search Handlers ───────────────────────────────────────────────────────
+    ' ── Search Handlers
     Private Sub OnSearchClicked(sender As Object, e As EventArgs)
         PerformSearch(_searchInput.Text)
     End Sub
@@ -407,7 +418,7 @@ Public Class BaseDGV
         End If
     End Sub
 
-    ' ── Page Size Handlers ────────────────────────────────────────────────────
+    ' ── Page Size Handlers 
     Private Sub OnPageSizeKeyPress(sender As Object, e As KeyPressEventArgs)
         If Not Char.IsDigit(e.KeyChar) AndAlso e.KeyChar <> ControlChars.Back Then
             e.Handled = True
@@ -469,7 +480,7 @@ Public Class BaseDGV
         ApplyPage()
     End Sub
 
-    ' ── Pagination Core ───────────────────────────────────────────────────────
+    ' ── Pagination
     Private Sub GoToPage(page As Integer)
         Dim clamped As Integer = Math.Max(1, Math.Min(page, TotalPages))
         If clamped = _currentPage Then Return
@@ -518,8 +529,12 @@ Public Class BaseDGV
         _prevPageBtn.Enabled = _currentPage > 1
         _nextPageBtn.Enabled = _currentPage < totalPgs
         _lastPageBtn.Enabled = _currentPage < totalPgs
+
+        _noResultsLabel.Visible = (totalRows = 0)
+        If _noResultsLabel.Visible Then _noResultsLabel.BringToFront()
     End Sub
-    ' ── Public Helpers ────────────────────────────────────────────────────────
+
+    ' ── Public Helpers
     Public Function GetSelectedItem() As Dictionary(Of String, Object)
         If _dgv.SelectedRows.Count = 0 Then Return Nothing
         Dim row As DataGridViewRow = _dgv.SelectedRows(0)
@@ -567,6 +582,19 @@ Public Class BaseDGV
         _pageSizeInput.Text = size.ToString()
         _currentPage = 1
         ApplyPage()
+    End Sub
+
+    Public Sub FilterData(searchText As String, searchParam As String)
+        If _dgv.DataSource Is Nothing Then Exit Sub
+
+        Dim dt As DataTable = DirectCast(_dgv.DataSource, DataTable)
+
+        If String.IsNullOrEmpty(searchText) Then
+            dt.DefaultView.RowFilter = ""
+        Else
+            ' Search param sample: "Name LIKE '%{0}%' OR Email LIKE '%{0}%'"
+            dt.DefaultView.RowFilter = String.Format(searchParam, searchText)
+        End If
     End Sub
 
 End Class

@@ -1,17 +1,31 @@
-﻿
-Imports Guna.UI2.WinForms
+﻿Imports Guna.UI2.WinForms
 
-Public Class SearchableComboBox
+
+Public Class BaseComboBox
     Inherits UserControl
+    Implements IValueProvider
+    Implements IValidationStyleable
 
     Public Event SelectedValueChanged As EventHandler
+    Public Event ValueChanged As EventHandler Implements IValueProvider.ValueChanged
 
     Public Property Items As New List(Of String)
     Public Property Placeholder As String = "Select an option..."
+    Public Property SearchEnabled As Boolean = True
 
     Private _selectedValue As String = ""
     Private WithEvents _btn As New Guna2Button
     Private _dropdown As ComboDropdownPanel
+    Private _label As BaseLabel
+    Private _cmbName As String
+
+    Public ReadOnly Property Value As String Implements IValueProvider.Value
+        Get
+            Return _selectedValue
+        End Get
+    End Property
+
+    '  SelectedValue (public, raises both events) 
 
     Public Property SelectedValue As String
         Get
@@ -19,33 +33,68 @@ Public Class SearchableComboBox
         End Get
         Set(value As String)
             _selectedValue = value
-            _btn.Text = If(String.IsNullOrWhiteSpace(value), Placeholder, "  " & value)
-            _btn.ForeColor = If(String.IsNullOrWhiteSpace(value),
-                                Color.FromArgb(150, 150, 150),
-                                Color.FromArgb(20, 20, 20))
+            UpdateButtonAppearance()
+            RaiseEvent SelectedValueChanged(Me, EventArgs.Empty)
+            RaiseEvent ValueChanged(Me, EventArgs.Empty)
         End Set
     End Property
 
-    Public Sub New()
-        Me.Size = New Size(260, 40)
-        Me.BackColor = Color.Transparent
+    '  IValidationStyleable 
+
+    Public Sub OnValidationError() Implements IValidationStyleable.OnValidationError
+        _btn.BorderColor = Color.Red
+    End Sub
+
+    Public Sub OnValidationClear() Implements IValidationStyleable.OnValidationClear
+        _btn.BorderColor = Color.FromArgb(220, 220, 220)
+    End Sub
+
+    '  Constructor 
+
+    Public Sub New(cmbName As String)
+        Me.AutoSize = True
+        Me.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        _cmbName = cmbName
 
         With _btn
-            .Dock = DockStyle.Fill
-            .Text = Placeholder
+            .Dock = DockStyle.Top
+            .Height = 36
             .FillColor = Color.White
             .ForeColor = Color.FromArgb(150, 150, 150)
             .BorderColor = Color.FromArgb(220, 220, 220)
-            .BorderRadius = 8
+            .BorderRadius = 4
             .BorderThickness = 1
-            .Font = New Font("Segoe UI", 9.5F)
+            .Font = New Font("Segoe UI", 9.0F)
             .TextAlign = HorizontalAlignment.Left
             .HoverState.FillColor = Color.FromArgb(248, 250, 252)
             .Cursor = Cursors.Hand
         End With
 
-        Controls.Add(_btn)
+        _label = New BaseLabel
+        With _label
+            .Text = cmbName
+            .Dock = DockStyle.Top
+            .SetSmall()
+            .Padding = New Padding(0, 0, 0, 4)
+        End With
+
+        UpdateButtonAppearance()
+
+        Me.Controls.Add(_btn)
+        Me.Controls.Add(_label)
     End Sub
+
+    '  Button appearance 
+
+    Private Sub UpdateButtonAppearance()
+        Dim hasValue = Not String.IsNullOrWhiteSpace(_selectedValue)
+        _btn.Text = If(hasValue, "  " & _selectedValue, Placeholder)
+        _btn.ForeColor = If(hasValue,
+                            Color.FromArgb(20, 20, 20),
+                            Color.FromArgb(150, 150, 150))
+    End Sub
+
+    '  Dropdown toggle
 
     Private Sub _btn_Click(sender As Object, e As EventArgs) Handles _btn.Click
         If _dropdown IsNot Nothing Then
@@ -57,18 +106,16 @@ Public Class SearchableComboBox
         Dim parentForm = Me.FindForm()
         If parentForm Is Nothing Then Return
 
-        _dropdown = New ComboDropdownPanel(Items, _selectedValue)
+        _dropdown = New ComboDropdownPanel(Items, _selectedValue, Not SearchEnabled)
         _dropdown.Width = Me.Width
 
         Dim screenPoint = Me.Parent.PointToScreen(Me.Location)
         Dim formPoint = parentForm.PointToClient(screenPoint)
-
-        _dropdown.Location = New Point(formPoint.X, formPoint.Y + Me.Height + 4)
+        _dropdown.Location = New Point(formPoint.X - 4, formPoint.Y + Me.Height + 4)
 
         AddHandler _dropdown.ItemSelected,
             Sub(value As String)
                 SelectedValue = value
-                RaiseEvent SelectedValueChanged(Me, EventArgs.Empty)
             End Sub
 
         AddHandler _dropdown.DropdownClosed,
@@ -81,26 +128,31 @@ Public Class SearchableComboBox
         _dropdown.OpenDropdown()
     End Sub
 
+    ' ── Public helpers ───────────────────────────────────────────
+
     Public Sub ClearSelection()
-        SelectedValue = ""
-        RaiseEvent SelectedValueChanged(Me, EventArgs.Empty)
+        SelectedValue = String.Empty
     End Sub
 
     Private Sub InitializeComponent()
         Me.SuspendLayout()
         '
-        'SearchableComboBox
+        'BaseComboBox
         '
-        Me.Name = "SearchableComboBox"
+        Me.Name = _cmbName
         Me.ResumeLayout(False)
 
     End Sub
 
-    Private Sub SearchableComboBox_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    Private Sub BaseComboBox_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
     End Sub
 End Class
 
+
+' 
+' COMBO DROPDOWN PANEL 
+' 
 Public Class ComboDropdownPanel
     Inherits Guna2Panel
 
@@ -109,15 +161,18 @@ Public Class ComboDropdownPanel
 
     Private ReadOnly _allItems As List(Of String)
     Private ReadOnly _current As String
+    Private ReadOnly _disableSearch As Boolean
 
     Private WithEvents _search As New Guna2TextBox
     Private _list As New FlowLayoutPanel
     Private _empty As New Label
     Private _timer As New Timer With {.Interval = 100}
 
-    Public Sub New(items As List(Of String), current As String)
+    Public Sub New(items As List(Of String), current As String,
+                   Optional disableSearch As Boolean = False)
         _allItems = items
         _current = current
+        _disableSearch = disableSearch
 
         Me.FillColor = Color.White
         Me.BorderRadius = 10
@@ -132,24 +187,36 @@ Public Class ComboDropdownPanel
     End Sub
 
     Private Sub BuildUI()
-        With _search
-            .Location = New Point(8, 8)
-            .Height = 28
-            .PlaceholderText = "Search..."
-            .FillColor = Color.FromArgb(248, 250, 252)
-            .BorderRadius = 7
-            .BorderColor = Color.FromArgb(220, 220, 220)
-            .FocusedState.BorderColor = Color.FromArgb(99, 102, 241)
-            .Font = New Font("Segoe UI", 9.5F)
-            .Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        End With
+        Dim flow As New FlowLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .FlowDirection = FlowDirection.TopDown,
+            .WrapContents = False,
+            .AutoScroll = False,
+            .Padding = New Padding(0)
+        }
+
+        If Not _disableSearch Then
+            With _search
+                .Width = Me.Width - 16
+                .Height = 32
+                .PlaceholderText = "Search..."
+                .FillColor = Color.FromArgb(248, 250, 252)
+                .BorderRadius = 7
+                .BorderColor = Color.FromArgb(220, 220, 220)
+                .FocusedState.BorderColor = Color.FromArgb(99, 102, 241)
+                .Font = New Font("Segoe UI", 9.5F)
+                .Margin = New Padding(0, 0, 0, 6)
+                .Anchor = AnchorStyles.Left Or AnchorStyles.Right
+            End With
+            flow.Controls.Add(_search)
+        End If
 
         _list = New FlowLayoutPanel With {
-            .Location = New Point(8, 52),
+            .Width = Me.Width - 16,
             .FlowDirection = FlowDirection.TopDown,
             .WrapContents = False,
             .AutoScroll = True,
-            .Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right Or AnchorStyles.Bottom
+            .Margin = New Padding(0)
         }
 
         _empty = New Label With {
@@ -157,12 +224,14 @@ Public Class ComboDropdownPanel
             .Font = New Font("Segoe UI", 9.0F),
             .ForeColor = Color.FromArgb(150, 150, 150),
             .TextAlign = ContentAlignment.MiddleCenter,
+            .Width = Me.Width - 16,
+            .Height = 40,
             .Visible = False
         }
 
-        Controls.Add(_search)
-        Controls.Add(_list)
-        Controls.Add(_empty)
+        flow.Controls.Add(_list)
+        flow.Controls.Add(_empty)
+        Controls.Add(flow)
 
         AddHandler _timer.Tick, AddressOf CheckOutsideClick
     End Sub
@@ -170,17 +239,13 @@ Public Class ComboDropdownPanel
     Public Sub OpenDropdown()
         Me.Visible = True
         Populate(_allItems)
-        _search.Focus()
+        If Not _disableSearch Then _search.Focus()
         _timer.Start()
     End Sub
 
     Public Sub CloseDropdown()
         _timer.Stop()
-
-        If Me.Parent IsNot Nothing Then
-            Me.Parent.Controls.Remove(Me)
-        End If
-
+        If Me.Parent IsNot Nothing Then Me.Parent.Controls.Remove(Me)
         RaiseEvent DropdownClosed()
         Me.Dispose()
     End Sub
@@ -201,17 +266,12 @@ Public Class ComboDropdownPanel
 
         For Each item In items
             Dim isSelected = (item = _current)
-
             Dim btn As New Guna2Button With {
                 .Text = If(isSelected, "  ✓  " & item, "     " & item),
                 .Height = 32,
                 .Width = Me.Width - 24,
-                .FillColor = If(isSelected,
-                                Color.FromArgb(238, 242, 255),
-                                Color.White),
-                .ForeColor = If(isSelected,
-                                Color.FromArgb(79, 70, 229),
-                                Color.FromArgb(30, 41, 59)),
+                .FillColor = If(isSelected, Color.FromArgb(238, 242, 255), Color.White),
+                .ForeColor = If(isSelected, Color.FromArgb(79, 70, 229), Color.FromArgb(30, 41, 59)),
                 .BorderRadius = 6,
                 .BorderThickness = 0,
                 .Font = New Font("Segoe UI", 9.5F,
@@ -221,7 +281,6 @@ Public Class ComboDropdownPanel
                 .Tag = item,
                 .Margin = New Padding(0, 0, 0, 4)
             }
-
             btn.HoverState.FillColor = Color.FromArgb(238, 242, 255)
             btn.HoverState.ForeColor = Color.FromArgb(79, 70, 229)
 
@@ -235,33 +294,27 @@ Public Class ComboDropdownPanel
         Next
 
         Dim visibleCount = Math.Min(items.Count, 6)
-        Me.Height = 60 + (visibleCount * 40) + 10
-
+        Dim searchHeight = If(_disableSearch, 0, 48)
+        Me.Height = searchHeight + (visibleCount * 40) + 16
         ResizeLayout()
     End Sub
 
     Private Sub ResizeLayout()
         Dim innerWidth = Me.Width - 16
-
         _search.Width = innerWidth
         _list.Width = innerWidth
-        _list.Height = Me.Height - 60
-
+        _list.Height = Me.Height - If(_disableSearch, 16, 54)
         For Each ctrl As Control In _list.Controls
             ctrl.Width = innerWidth - 5
         Next
-
-        _empty.Location = New Point(8, 55)
-        _empty.Size = New Size(innerWidth, 40)
+        _empty.Width = innerWidth
     End Sub
 
     Private Sub _search_TextChanged(sender As Object, e As EventArgs) Handles _search.TextChanged
         Dim query = _search.Text.Trim().ToLower()
-
         Dim filtered = If(String.IsNullOrWhiteSpace(query),
                           _allItems,
                           _allItems.Where(Function(x) x.ToLower().Contains(query)).ToList())
-
         Populate(filtered)
     End Sub
 
@@ -272,10 +325,7 @@ Public Class ComboDropdownPanel
 
     Private Sub CheckOutsideClick(sender As Object, e As EventArgs)
         If Control.MouseButtons = MouseButtons.Left Then
-            Dim mousePos = Cursor.Position
-            Dim screenBounds = RectangleToScreen(Me.ClientRectangle)
-
-            If Not screenBounds.Contains(mousePos) Then
+            If Not RectangleToScreen(Me.ClientRectangle).Contains(Cursor.Position) Then
                 CloseDropdown()
             End If
         End If
@@ -286,7 +336,7 @@ Public Class ComboDropdownPanel
             _timer.Stop()
             _timer.Dispose()
         End If
-
         MyBase.Dispose(disposing)
     End Sub
+
 End Class

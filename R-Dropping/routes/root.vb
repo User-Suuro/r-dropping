@@ -5,9 +5,9 @@
     Private SidebarContainer As Panel
     Private Sidebar As FlowLayoutPanel
     Private MainContent As Panel
+    Private RouteLabel As BaseLabel
 
-    Public rootNav As NavigationManager
-
+    Public Shared rootNav As NavigationManager
 
     Public Sub New()
         Me.Dock = DockStyle.Fill
@@ -22,6 +22,25 @@
             .Dock = DockStyle.Top,
             .Height = 60
         }
+
+        RouteLabel = New BaseLabel
+
+        With RouteLabel
+            .SetMedium()
+            .Text = "Page"
+            .AutoSize = True
+            .Left = (TopPanel.ClientSize.Width - RouteLabel.Width) \ 2
+            .Top = (TopPanel.ClientSize.Height - RouteLabel.Height) \ 2
+        End With
+
+        TopPanel.Controls.Add(RouteLabel)
+
+        AddHandler TopPanel.Resize,
+        Sub()
+            RouteLabel.Left = (TopPanel.ClientSize.Width - RouteLabel.Width) \ 2
+            RouteLabel.Top = (TopPanel.ClientSize.Height - RouteLabel.Height) \ 2
+        End Sub
+
 
         ' Top Panel Bottom Border
 
@@ -62,20 +81,24 @@
 
         rootNav = New NavigationManager(MainContent)
 
+        ' set initial page
+        rootNav.GoToPage(New EmployeesPage())
+        SetRouteLabel("Employees")
 
         AddHandler homeBtn.ButtonControl.Click,
         Sub(sender, e)
-            rootNav.GoToPage(New SampleDGVPage())
+            showUnavailablePage()
         End Sub
 
         AddHandler dropOffBtn.ButtonControl.Click,
         Sub(sender, e)
-            rootNav.GoToPage(New SampleComboPage())
+            showUnavailablePage()
         End Sub
 
         AddHandler employeesBtn.ButtonControl.Click,
         Sub(sender, e)
-
+            rootNav.GoToPage(New EmployeesPage())
+            SetRouteLabel("Employees")
         End Sub
 
         AddHandler sellersBtn.ButtonControl.Click,
@@ -97,7 +120,6 @@
         Sub(sender, e)
             showUnavailablePage()
         End Sub
-
 
         With Sidebar.Controls
             .Add(homeBtn)
@@ -135,6 +157,10 @@
                  "Unavailable Page",
                  "Please wait for updates")
         dlg.ShowBaseDialog(Form1.Instance)
+    End Sub
+
+    Public Sub SetRouteLabel(text As String)
+        RouteLabel.Text = text.ToUpper()
     End Sub
 
 End Class
