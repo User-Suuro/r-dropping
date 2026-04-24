@@ -20,13 +20,13 @@ Module Db
                                       password As String,
                                       database As String)
 
-            db_server = server
-            db_port = port
-            db_uid = uid
-            db_pwd = password
-            db_name = database
+        db_server = server
+        db_port = port
+        db_uid = uid
+        db_pwd = password
+        db_name = database
 
-            strConnection =
+        strConnection =
             "server=" & db_server & ";" &
             "port=" & db_port & ";" &
             "uid=" & db_uid & ";" &
@@ -34,9 +34,7 @@ Module Db
             "database=" & db_name & ";" &
             "Allow User Variables=True;"
 
-        End Sub
-
-
+    End Sub
 
     Public Async Function OpenConnAsync() As Task(Of Boolean)
 
@@ -59,6 +57,26 @@ Module Db
             Return False
         End Try
 
+    End Function
+
+    Public Async Function ReadQueryAsync(sql As String) As Task(Of MySqlDataReader)
+        Try
+            Dim opened As Boolean = Await OpenConnAsync()
+
+            If opened = False Then
+                Return Nothing
+            End If
+
+            cmd = New MySqlCommand(sql, conn)
+
+            cmdRead = CType(Await cmd.ExecuteReaderAsync(), MySqlDataReader)
+
+            Return cmdRead
+
+        Catch ex As Exception
+            MsgBox(ex.Message, MsgBoxStyle.Critical)
+            Return Nothing
+        End Try
     End Function
 
     Public Async Function ReadQueryAsync(sql As String, params As Dictionary(Of String, Object)) As Task(Of MySqlDataReader)
@@ -84,6 +102,8 @@ Module Db
         End Try
 
     End Function
+
+
 
     Public Async Function ExecuteQueryAsync(sql As String, params As Dictionary(Of String, Object)) As Task(Of Integer)
 

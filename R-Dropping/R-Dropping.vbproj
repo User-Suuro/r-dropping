@@ -171,10 +171,12 @@
     </Compile>
     <Compile Include="models\DbConfig.vb" />
     <Compile Include="models\EmployeeTable.vb" />
+    <Compile Include="routes\buyer\BuyerForm.vb" />
+    <Compile Include="routes\buyer\BuyerPage.vb" />
     <Compile Include="routes\employees\EmployeeForm.vb">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="routes\employees\EmployeesPage.vb">
+    <Compile Include="routes\employees\EmployeePage.vb">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="routes\sample\SampleCMBPage.Designer.vb">

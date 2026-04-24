@@ -82,7 +82,7 @@
         rootNav = New NavigationManager(MainContent)
 
         ' set initial page
-        rootNav.GoToPage(New EmployeesPage())
+        rootNav.GoToPage(New EmployeePage())
         SetRouteLabel("Employees")
 
         AddHandler homeBtn.ButtonControl.Click,
@@ -97,7 +97,7 @@
 
         AddHandler employeesBtn.ButtonControl.Click,
         Sub(sender, e)
-            rootNav.GoToPage(New EmployeesPage())
+            rootNav.GoToPage(New EmployeePage())
             SetRouteLabel("Employees")
         End Sub
 

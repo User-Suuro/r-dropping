@@ -1,5 +1,4 @@
-﻿
-Imports MySql.Data.MySqlClient
+﻿Imports MySql.Data.MySqlClient
 
 Public Class EmployeeForm
     Inherits BasePanel
@@ -22,9 +21,9 @@ Public Class EmployeeForm
 
     Private _buttonTable As TableLayoutPanel
 
-    Private _id As Integer
+    Private _id As Integer?
 
-    Public Sub New(Optional id = Nothing)
+    Public Sub New(Optional id As Integer? = Nothing)
         Me.Dock = DockStyle.Fill
         _id = id
         InitializeComponent()
@@ -101,15 +100,15 @@ Public Class EmployeeForm
 
         _cancelButton.SetDanger()
 
-        _buttonTable.Controls.Add(_cancelButton, 0, 0)
-        _buttonTable.Controls.Add(_addButton, 1, 0)
-
         ' Handle Edit Mode
-        If _id = Not Nothing Then
+        If _id.HasValue() Then
             handleEditMode(_id)
         End If
 
         ' Controls
+
+        _buttonTable.Controls.Add(_cancelButton, 0, 0)
+        _buttonTable.Controls.Add(_addButton, 1, 0)
 
         With _subContainer.Controls
             .Add(_fieldFirstName)
@@ -127,9 +126,36 @@ Public Class EmployeeForm
         AddHandler _cancelButton.Click, AddressOf CancelAdd
     End Sub
 
-    Private Function handleEditMode(id As Integer)
+    Private Async Sub handleEditMode(id As Integer)
         _addButton.Text = "Save"
-    End Function
+
+        Dim sql As String =
+        $"SELECT {EmployeeTable.first_name}, {EmployeeTable.last_name}, {EmployeeTable.middle_name}, {EmployeeTable.position} " &
+        $"FROM {EmployeeTable.table_name} " &
+        $"WHERE {EmployeeTable.id} = @{EmployeeTable.id}"
+
+        Dim params As New Dictionary(Of String, Object) From {
+                {$"@{EmployeeTable.id}", id}
+        }
+
+        Dim reader As MySqlDataReader = Await ReadQueryAsync(sql, params)
+
+        If reader IsNot Nothing Then
+            While Await reader.ReadAsync()
+                Dim firstName As String = reader(EmployeeTable.first_name).ToString()
+                Dim lastName As String = reader(EmployeeTable.last_name).ToString()
+                Dim middleName As String = If(IsDBNull(reader(EmployeeTable.middle_name)), "", reader(EmployeeTable.middle_name).ToString())
+                Dim position As String = reader(EmployeeTable.position).ToString()
+
+                _inpFirstName.SetValue(firstName)
+                _inpLastName.SetValue(lastName)
+                _inpMiddleName.SetValue(middleName)
+                _cbxPosition.SetValue(position)
+            End While
+
+            reader.Close()
+        End If
+    End Sub
 
     Private Function ValidateAllInputs() As Boolean
         Return {_fieldFirstName, _fieldLastName, _cbxPosField}.All(Function(f) f.ValidateInput())
@@ -143,10 +169,16 @@ Public Class EmployeeForm
 
         Dim confirm_dlg = New BaseDialog()
 
+        Dim msg As String = "Are you sure you want to add this employee?"
+
+        If _id.HasValue() Then
+            msg = "Are you sure you want to save changes to this employee?"
+        End If
+
         DialogTypes.Apply(confirm_dlg,
                  DialogType.Confirmation,
                  "Confirmation",
-                 "Are you sure you want to add this employee?")
+                 msg)
 
         If Await confirm_dlg.ShowBaseDialogAsync(Form1.Instance) = DialogResultType.Confirm Then
             Dim loadingDlg As New BaseDialog()
@@ -156,19 +188,26 @@ Public Class EmployeeForm
                 Form1.Instance,
                 Async Function()
 
-                    Dim queryResult As Boolean = Await AddEmployeeQuery()
+                    Dim queryResult As Boolean
+
+                    If _id.HasValue() Then
+                        queryResult = Await EditEmployeeQuery()
+                    Else
+                        queryResult = Await AddEmployeeQuery()
+                    End If
+
                     If queryResult Then
                         Dim info_dlg = New BaseDialog()
 
                         DialogTypes.Apply(info_dlg,
                           DialogType.Info,
                           "Success",
-                          "Employee saved successfully")
+                          "Changes was saved successfully")
 
                         Dim result_info_dlg = Await info_dlg.ShowBaseDialogAsync(Form1.Instance)
 
                         If result_info_dlg = DialogResultType.Confirm Then
-                            root.rootNav.GoBackPage()
+                            root.rootNav.GoToPage(New EmployeePage())
                         End If
                     End If
                 End Function
@@ -198,6 +237,29 @@ Public Class EmployeeForm
             Return True
         End If
 
+        Return False
+    End Function
+
+    Private Async Function EditEmployeeQuery() As Task(Of Boolean)
+        Dim sql As String =
+        $"UPDATE {EmployeeTable.table_name} SET " &
+        $"{EmployeeTable.first_name} = @{EmployeeTable.first_name}, " &
+        $"{EmployeeTable.middle_name} = @{EmployeeTable.middle_name}, " &
+        $"{EmployeeTable.last_name} = @{EmployeeTable.last_name}, " &
+        $"{EmployeeTable.position} = @{EmployeeTable.position} " &
+        $"WHERE {EmployeeTable.id} = @{EmployeeTable.id}"
+
+        Dim params As New Dictionary(Of String, Object) From {
+        {$"@{EmployeeTable.first_name}", _inpFirstName.Value},
+        {$"@{EmployeeTable.middle_name}", ToDbNull(_inpMiddleName.Value)},
+        {$"@{EmployeeTable.last_name}", _inpLastName.Value},
+        {$"@{EmployeeTable.position}", _cbxPosition.SelectedValue},
+        {$"@{EmployeeTable.id}", _id.Value}
+        }
+        Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
+        If affectedRows > 0 Then
+            Return True
+        End If
         Return False
     End Function
 

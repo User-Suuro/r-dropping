@@ -147,6 +147,14 @@ Public Class BaseComboBox
     Private Sub BaseComboBox_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
     End Sub
+
+    Public Sub SetValue(value As String)
+        If Items.Contains(value) Then
+            SelectedValue = value
+        Else
+            SelectedValue = String.Empty
+        End If
+    End Sub
 End Class
 
 
@@ -338,5 +346,7 @@ Public Class ComboDropdownPanel
         End If
         MyBase.Dispose(disposing)
     End Sub
+
+
 
 End Class
