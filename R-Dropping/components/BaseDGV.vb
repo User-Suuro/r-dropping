@@ -1,19 +1,29 @@
 Imports Guna.UI2.WinForms
+Public Enum ButtonVisibility
+    Always          ' Always visible, regardless of selection
+    OnSelection     ' Show only when a row is selected
+    OnNoSelection   ' Show only when nothing is selected (default for Add, Refresh)
+End Enum
 
 Public Class BaseDGV
     Inherits BasePanel
 
     Private ReadOnly _dgv As New Guna2DataGridView()
 
+    Private Structure ActionButtonEntry
+        Public Button As BaseButton
+        Public Visibility As ButtonVisibility
+    End Structure
+
+    Private ReadOnly _actionButtons As New List(Of ActionButtonEntry)()
+
+
     ' ── Toolbar (top)
     Private _toolbarPanel As Panel
     Private _toolbarLayout As TableLayoutPanel
     Private _searchInput As Guna2TextBox
     Private _searchBtn As BaseButton
-    Private _addBtn As BaseButton
-    Private _refreshBtn As BaseButton
-    Private _updateBtn As BaseButton
-    Private _deleteBtn As BaseButton
+
     Private _actionButtonsPanel As FlowLayoutPanel
 
     ' ── Pagination (bottom)
@@ -53,29 +63,6 @@ Public Class BaseDGV
         End Get
     End Property
 
-    Public ReadOnly Property AddButton As BaseButton
-        Get
-            Return _addBtn
-        End Get
-    End Property
-
-    Public ReadOnly Property RefreshButton As BaseButton
-        Get
-            Return _refreshBtn
-        End Get
-    End Property
-
-    Public ReadOnly Property UpdateButton As BaseButton
-        Get
-            Return _updateBtn
-        End Get
-    End Property
-
-    Public ReadOnly Property DeleteButton As BaseButton
-        Get
-            Return _deleteBtn
-        End Get
-    End Property
 
     Public ReadOnly Property CurrentPage As Integer
         Get
@@ -160,41 +147,7 @@ Public Class BaseDGV
             .Anchor = AnchorStyles.Left Or AnchorStyles.Top
         }
 
-        _deleteBtn = New BaseButton With {
-            .Text = "Delete",
-            .Width = 95,
-            .Height = 38,
-            .Margin = New Padding(6, 0, 0, 0),
-            .Visible = False
-        }
-        _deleteBtn.SetDanger()
 
-        _updateBtn = New BaseButton With {
-            .Text = "Update",
-            .Width = 100,
-            .Height = 38,
-            .Margin = New Padding(6, 0, 0, 0),
-            .Visible = False
-        }
-        _updateBtn.SetPrimary()
-
-        _addBtn = New BaseButton With {
-            .Text = "Add",
-            .Width = 90,
-            .Height = 38,
-            .Margin = New Padding(6, 0, 0, 0)
-        }
-        _addBtn.SetPrimary()
-
-        _refreshBtn = New BaseButton With {
-            .Text = "Refresh",
-            .Width = 105,
-            .Height = 38,
-            .Margin = Padding.Empty
-        }
-        _refreshBtn.SetPrimary()
-
-        _actionButtonsPanel.Controls.AddRange({_deleteBtn, _updateBtn, _addBtn, _refreshBtn})
         _toolbarLayout.Controls.Add(_searchInput, 0, 0)
         _toolbarLayout.Controls.Add(_searchBtn, 1, 0)
         _toolbarLayout.Controls.Add(_actionButtonsPanel, 2, 0)
@@ -395,15 +348,50 @@ Public Class BaseDGV
     ' ── DGV Handlers
     Private Sub OnDgvCellClick(sender As Object, e As DataGridViewCellEventArgs)
         If e.RowIndex < 0 Then Return
-        _updateBtn.Visible = True
-        _deleteBtn.Visible = True
+        RefreshButtonVisibility()
     End Sub
 
     Private Sub OnDataBindingComplete(sender As Object, e As DataGridViewBindingCompleteEventArgs)
         If _isPaging Then Return
         _dgv.ClearSelection()
-        _updateBtn.Visible = False
-        _deleteBtn.Visible = False
+        RefreshButtonVisibility()
+    End Sub
+
+    Private Sub RefreshButtonVisibility()
+        Dim hasSelection As Boolean = _dgv.SelectedRows.Count > 0
+        For Each entry In _actionButtons
+            Select Case entry.Visibility
+                Case ButtonVisibility.Always
+                    entry.Button.Visible = True
+                Case ButtonVisibility.OnSelection
+                    entry.Button.Visible = hasSelection
+                Case ButtonVisibility.OnNoSelection
+                    entry.Button.Visible = Not hasSelection
+            End Select
+        Next
+    End Sub
+
+    Public Sub AddActionButton(btn As BaseButton,
+                           visibility As ButtonVisibility,
+                           Optional insertAt As Integer = -1)
+        _actionButtons.Add(New ActionButtonEntry With {
+        .Button = btn,
+        .Visibility = visibility
+    })
+
+        ' Keep a consistent margin
+        If btn.Margin = Padding.Empty Then
+            btn.Margin = New Padding(6, 0, 0, 0)
+        End If
+
+        If insertAt >= 0 AndAlso insertAt < _actionButtonsPanel.Controls.Count Then
+            _actionButtonsPanel.Controls.Add(btn)
+            _actionButtonsPanel.Controls.SetChildIndex(btn, insertAt)
+        Else
+            _actionButtonsPanel.Controls.Add(btn)
+        End If
+
+        RefreshButtonVisibility()
     End Sub
 
     ' ── Search Handlers
@@ -519,9 +507,7 @@ Public Class BaseDGV
         _dgv.ResumeLayout()
 
         _isPaging = False
-
-        _updateBtn.Visible = False
-        _deleteBtn.Visible = False
+        RefreshButtonVisibility()
 
         _pageInfoLabel.Text = $"Page {_currentPage} of {totalPgs}  ({totalRows} items)"
 
@@ -564,8 +550,7 @@ Public Class BaseDGV
 
     Public Sub ResetSelection()
         _dgv.ClearSelection()
-        _updateBtn.Visible = False
-        _deleteBtn.Visible = False
+        RefreshButtonVisibility()
     End Sub
 
     Public Sub ClearSelection()

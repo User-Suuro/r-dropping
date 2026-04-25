@@ -130,22 +130,22 @@ Public Class EmployeeForm
         _addButton.Text = "Save"
 
         Dim sql As String =
-        $"SELECT {EmployeeTable.first_name}, {EmployeeTable.last_name}, {EmployeeTable.middle_name}, {EmployeeTable.position} " &
-        $"FROM {EmployeeTable.table_name} " &
-        $"WHERE {EmployeeTable.id} = @{EmployeeTable.id}"
+        $"SELECT {Employee.first_name}, {Employee.last_name}, {Employee.middle_name}, {Employee.position} " &
+        $"FROM {Employee.table_name} " &
+        $"WHERE {Employee.id} = @{Employee.id}"
 
         Dim params As New Dictionary(Of String, Object) From {
-                {$"@{EmployeeTable.id}", id}
+                {$"@{Employee.id}", id}
         }
 
         Dim reader As MySqlDataReader = Await ReadQueryAsync(sql, params)
 
         If reader IsNot Nothing Then
             While Await reader.ReadAsync()
-                Dim firstName As String = reader(EmployeeTable.first_name).ToString()
-                Dim lastName As String = reader(EmployeeTable.last_name).ToString()
-                Dim middleName As String = If(IsDBNull(reader(EmployeeTable.middle_name)), "", reader(EmployeeTable.middle_name).ToString())
-                Dim position As String = reader(EmployeeTable.position).ToString()
+                Dim firstName As String = reader(Employee.first_name).ToString()
+                Dim lastName As String = reader(Employee.last_name).ToString()
+                Dim middleName As String = If(IsDBNull(reader(Employee.middle_name)), "", reader(Employee.middle_name).ToString())
+                Dim position As String = reader(Employee.position).ToString()
 
                 _inpFirstName.SetValue(firstName)
                 _inpLastName.SetValue(lastName)
@@ -207,7 +207,7 @@ Public Class EmployeeForm
                         Dim result_info_dlg = Await info_dlg.ShowBaseDialogAsync(Form1.Instance)
 
                         If result_info_dlg = DialogResultType.Confirm Then
-                            root.rootNav.GoToPage(New EmployeePage())
+                            root.rootNav.GoBackPage()
                         End If
                     End If
                 End Function
@@ -220,15 +220,15 @@ Public Class EmployeeForm
 
     Private Async Function AddEmployeeQuery() As Task(Of Boolean)
         Dim sql As String =
-        $"INSERT INTO {EmployeeTable.table_name} " &
-        $"({EmployeeTable.first_name}, {EmployeeTable.middle_name}, {EmployeeTable.last_name}, {EmployeeTable.position}) " &
-        $"VALUES (@{EmployeeTable.first_name}, @{EmployeeTable.middle_name}, @{EmployeeTable.last_name}, @{EmployeeTable.position})"
+        $"INSERT INTO {Employee.table_name} " &
+        $"({Employee.first_name}, {Employee.middle_name}, {Employee.last_name}, {Employee.position}) " &
+        $"VALUES (@{Employee.first_name}, @{Employee.middle_name}, @{Employee.last_name}, @{Employee.position})"
 
         Dim params As New Dictionary(Of String, Object) From {
-        {$"@{EmployeeTable.first_name}", _inpFirstName.Value},
-        {$"@{EmployeeTable.middle_name}", ToDbNull(_inpMiddleName.Value)},
-        {$"@{EmployeeTable.last_name}", _inpLastName.Value},
-        {$"@{EmployeeTable.position}", _cbxPosition.SelectedValue}
+        {$"@{Employee.first_name}", _inpFirstName.Value},
+        {$"@{Employee.middle_name}", ToDbNull(_inpMiddleName.Value)},
+        {$"@{Employee.last_name}", _inpLastName.Value},
+        {$"@{Employee.position}", _cbxPosition.SelectedValue}
         }
 
         Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
@@ -242,19 +242,19 @@ Public Class EmployeeForm
 
     Private Async Function EditEmployeeQuery() As Task(Of Boolean)
         Dim sql As String =
-        $"UPDATE {EmployeeTable.table_name} SET " &
-        $"{EmployeeTable.first_name} = @{EmployeeTable.first_name}, " &
-        $"{EmployeeTable.middle_name} = @{EmployeeTable.middle_name}, " &
-        $"{EmployeeTable.last_name} = @{EmployeeTable.last_name}, " &
-        $"{EmployeeTable.position} = @{EmployeeTable.position} " &
-        $"WHERE {EmployeeTable.id} = @{EmployeeTable.id}"
+        $"UPDATE {Employee.table_name} SET " &
+        $"{Employee.first_name} = @{Employee.first_name}, " &
+        $"{Employee.middle_name} = @{Employee.middle_name}, " &
+        $"{Employee.last_name} = @{Employee.last_name}, " &
+        $"{Employee.position} = @{Employee.position} " &
+        $"WHERE {Employee.id} = @{Employee.id}"
 
         Dim params As New Dictionary(Of String, Object) From {
-        {$"@{EmployeeTable.first_name}", _inpFirstName.Value},
-        {$"@{EmployeeTable.middle_name}", ToDbNull(_inpMiddleName.Value)},
-        {$"@{EmployeeTable.last_name}", _inpLastName.Value},
-        {$"@{EmployeeTable.position}", _cbxPosition.SelectedValue},
-        {$"@{EmployeeTable.id}", _id.Value}
+        {$"@{Employee.first_name}", _inpFirstName.Value},
+        {$"@{Employee.middle_name}", ToDbNull(_inpMiddleName.Value)},
+        {$"@{Employee.last_name}", _inpLastName.Value},
+        {$"@{Employee.position}", _cbxPosition.SelectedValue},
+        {$"@{Employee.id}", _id.Value}
         }
         Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
         If affectedRows > 0 Then

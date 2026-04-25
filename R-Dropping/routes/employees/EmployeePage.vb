@@ -1,10 +1,15 @@
-﻿Imports System.Security.Cryptography
+﻿
 Imports MySql.Data.MySqlClient
 
 Public Class EmployeePage
     Inherits BasePanel
+    Implements IRefreshable
 
     Private _dgv As BaseDGV
+
+    Public Sub RefreshPage() Implements IRefreshable.Refresh
+        FetchEmployeesData()
+    End Sub
 
     Public Sub New()
         Me.Dock = DockStyle.Fill
@@ -15,7 +20,57 @@ Public Class EmployeePage
 
     Private Sub InitializeComponent()
         _dgv = New BaseDGV()
+        InitializeActionBtn()
         Me.Controls.Add(_dgv)
+    End Sub
+
+
+    Private _deleteBtn As BaseButton
+    Private _updateBtn As BaseButton
+    Private _addBtn As BaseButton
+    Private _refreshBtn As BaseButton
+
+
+    Private Sub InitializeActionBtn()
+
+        _deleteBtn = New BaseButton With {
+            .Text = "Delete",
+            .Width = 95,
+            .Height = 38,
+            .Margin = New Padding(6, 0, 0, 0),
+            .Visible = False
+        }
+        _deleteBtn.SetDanger()
+
+        _updateBtn = New BaseButton With {
+            .Text = "Update",
+            .Width = 100,
+            .Height = 38,
+            .Margin = New Padding(6, 0, 0, 0),
+            .Visible = False
+        }
+        _updateBtn.SetPrimary()
+
+        _addBtn = New BaseButton With {
+            .Text = "Add",
+            .Width = 90,
+            .Height = 38,
+            .Margin = New Padding(6, 0, 0, 0)
+        }
+        _addBtn.SetPrimary()
+
+        _refreshBtn = New BaseButton With {
+            .Text = "Refresh",
+            .Width = 105,
+            .Height = 38,
+            .Margin = Padding.Empty
+        }
+        _refreshBtn.SetPrimary()
+
+        _dgv.AddActionButton(_deleteBtn, ButtonVisibility.OnSelection)
+        _dgv.AddActionButton(_updateBtn, ButtonVisibility.OnSelection)
+        _dgv.AddActionButton(_addBtn, ButtonVisibility.Always)
+        _dgv.AddActionButton(_refreshBtn, ButtonVisibility.Always)
     End Sub
 
     Private Sub SetupEventHandlers()
@@ -23,29 +78,29 @@ Public Class EmployeePage
 
         AddHandler _dgv.SearchButton.Click, Sub(sender, e)
                                                 Dim searchText = _dgv.GetSearchText()
-                                                Dim filterQuery = $"{EmployeeTable.first_name} LIKE '%{searchText}%' OR {EmployeeTable.last_name} LIKE '%{searchText}%'"
+                                                Dim filterQuery = $"{Employee.first_name} LIKE '%{searchText}%' OR {Employee.last_name} LIKE '%{searchText}%'"
                                                 _dgv.FilterData(searchText, filterQuery)
                                                 HandleCol()
                                             End Sub
 
 
-        AddHandler _dgv.AddButton.Click, Sub(sender, e)
-                                             root.rootNav.GoToPage(New EmployeeForm())
-                                         End Sub
+        AddHandler _addBtn.Click, Sub(sender, e)
+                                      root.rootNav.GoToPage(New EmployeeForm())
+                                  End Sub
 
-        AddHandler _dgv.UpdateButton.Click, Sub(sender, e)
-                                                Dim selectedRow = _dgv.GetSelectedRow()
-                                                root.rootNav.GoToPage(New EmployeeForm(selectedRow.Cells(0).Value))
-                                            End Sub
+        AddHandler _updateBtn.Click, Sub(sender, e)
+                                         Dim selectedRow = _dgv.GetSelectedRow()
+                                         root.rootNav.GoToPage(New EmployeeForm(selectedRow.Cells(0).Value))
+                                     End Sub
 
-        AddHandler _dgv.DeleteButton.Click, Sub(sender, e)
-                                                Dim selectedRow = _dgv.GetSelectedRow()
-                                                DeleteEmployees(selectedRow.Cells(0).Value)
-                                            End Sub
+        AddHandler _deleteBtn.Click, Sub(sender, e)
+                                         Dim selectedRow = _dgv.GetSelectedRow()
+                                         DeleteEmployees(selectedRow.Cells(0).Value)
+                                     End Sub
 
-        AddHandler _dgv.RefreshButton.Click, Sub(sender, e)
-                                                 FetchEmployeesData()
-                                             End Sub
+        AddHandler _refreshBtn.Click, Sub(sender, e)
+                                          FetchEmployeesData()
+                                      End Sub
     End Sub
 
     Private Async Sub FetchEmployeesData()
@@ -56,7 +111,7 @@ Public Class EmployeePage
             loadingDlg,
             Form1.Instance,
             Async Function()
-                Dim sql As String = $"SELECT * FROM {EmployeeTable.table_name}"
+                Dim sql As String = $"SELECT * FROM {Employee.table_name}"
 
                 Dim reader As MySqlDataReader = Await ReadQueryAsync(sql)
 
@@ -74,9 +129,9 @@ Public Class EmployeePage
     End Sub
 
     Private Sub HandleCol()
-        With _dgv.DataGridView.Columns
-            .Item(EmployeeTable.id).Visible = False
-        End With
+        If _dgv.DataGridView.Columns.Contains(Employee.id) Then
+            _dgv.DataGridView.Columns(Employee.id).Visible = False
+        End If
     End Sub
 
     Public Async Sub DeleteEmployees(id As Integer)
@@ -88,12 +143,12 @@ Public Class EmployeePage
                  "Are you sure you want to delete this employee?")
 
         If Await confirm_dlg.ShowBaseDialogAsync(Form1.Instance) = DialogResultType.Confirm Then
-            Dim sql As String = $"DELETE FROM {EmployeeTable.table_name} 
-                                WHERE {EmployeeTable.id} = @{EmployeeTable.id}"
+            Dim sql As String = $"DELETE FROM {Employee.table_name} 
+                                WHERE {Employee.id} = @{Employee.id}"
 
 
             Dim params As New Dictionary(Of String, Object) From {
-                {$"@{EmployeeTable.id}", id}
+                {$"@{Employee.id}", id}
             }
 
             Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)

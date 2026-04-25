@@ -70,6 +70,7 @@
         Dim homeBtn As New NavBtn("Dashboard", SidebarContainer.Width)
         Dim dropOffBtn As New NavBtn("Drop-off", SidebarContainer.Width)
         Dim employeesBtn As New NavBtn("Employees", SidebarContainer.Width)
+        Dim buyerBtn As New NavBtn("Buyers", SidebarContainer.Width)
         Dim sellersBtn As New NavBtn("Sellers", SidebarContainer.Width)
         Dim courierBtn As New NavBtn("Courier", SidebarContainer.Width)
         Dim pricingBtn As New NavBtn("Pricing", SidebarContainer.Width)
@@ -101,6 +102,12 @@
             SetRouteLabel("Employees")
         End Sub
 
+        AddHandler buyerBtn.ButtonControl.Click,
+        Sub(sender, e)
+            rootNav.GoToPage(New BuyerPage())
+            SetRouteLabel("Buyers")
+        End Sub
+
         AddHandler sellersBtn.ButtonControl.Click,
         Sub(sender, e)
             showUnavailablePage()
@@ -125,6 +132,7 @@
             .Add(homeBtn)
             .Add(dropOffBtn)
             .Add(employeesBtn)
+            .Add(buyerBtn)
             .Add(sellersBtn)
             .Add(courierBtn)
             .Add(pricingBtn)

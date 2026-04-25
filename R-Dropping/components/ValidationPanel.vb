@@ -1,4 +1,6 @@
-﻿Public Interface IValueProvider
+﻿Imports System.Text.RegularExpressions
+
+Public Interface IValueProvider
     ReadOnly Property Value As String
     Event ValueChanged As EventHandler
 End Interface
@@ -229,6 +231,16 @@ Public Class InputValidator
         Return Me
     End Function
 
+    Public Function IsPhone() As InputValidator
+        _rules.Add(Function(v)
+                       If String.IsNullOrWhiteSpace(v) Then Return ValidationResult.Ok
+                       Dim cleaned = Regex.Replace(v, "[\s\-\(\)\+\.]", "")
+                       Return If(Not Regex.IsMatch(cleaned, "^\d{7,15}$"),
+                             New ValidationResult(False, "Must be a valid phone number"),
+                             ValidationResult.Ok)
+                   End Function)
+        Return Me
+    End Function
 
     Public Function Custom(rule As Func(Of String, ValidationResult)) As InputValidator
         _rules.Add(rule)

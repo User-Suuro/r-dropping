@@ -1,4 +1,8 @@
-﻿Public Class NavigationManager
+﻿Public Interface IRefreshable
+    Sub Refresh()
+End Interface
+
+Public Class NavigationManager
 
     Private ReadOnly _hostPanel As Control
     Private ReadOnly _history As New Stack(Of Control)
@@ -65,6 +69,9 @@
         End If
 
         _currentPage = _history.Pop()
+        If TypeOf _currentPage Is IRefreshable Then
+            DirectCast(_currentPage, IRefreshable).Refresh()
+        End If
 
         With _currentPage
             .Dock = DockStyle.Fill
