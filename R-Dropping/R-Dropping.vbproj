@@ -177,6 +177,12 @@
     <Compile Include="routes\buyer\BuyerPage.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="routes\courier\CourierForm.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="routes\courier\CourierPage.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="routes\employees\EmployeeForm.vb">
       <SubType>Component</SubType>
     </Compile>
@@ -264,7 +270,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="routes\courier\" />
     <Folder Include="routes\dashboard\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

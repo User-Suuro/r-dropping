@@ -108,15 +108,18 @@
             SetRouteLabel("Buyers")
         End Sub
 
+
+        AddHandler courierBtn.ButtonControl.Click,
+        Sub(sender, e)
+            rootNav.GoToPage(New CourierPage())
+            SetRouteLabel("Courier")
+        End Sub
+
         AddHandler sellersBtn.ButtonControl.Click,
         Sub(sender, e)
             showUnavailablePage()
         End Sub
 
-        AddHandler courierBtn.ButtonControl.Click,
-        Sub(sender, e)
-            showUnavailablePage()
-        End Sub
 
         AddHandler pricingBtn.ButtonControl.Click,
         Sub(sender, e)

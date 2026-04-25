@@ -254,7 +254,7 @@ Public Class EmployeeForm
         {$"@{Employee.middle_name}", ToDbNull(_inpMiddleName.Value)},
         {$"@{Employee.last_name}", _inpLastName.Value},
         {$"@{Employee.position}", _cbxPosition.SelectedValue},
-        {$"@{Employee.id}", _id.Value}
+        {$"@{Employee.id}", _id}
         }
         Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
         If affectedRows > 0 Then

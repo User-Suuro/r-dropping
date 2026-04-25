@@ -25,6 +25,7 @@ Public Class Courier
     Public Shared ReadOnly last_name As String = "last_name"
     Public Shared ReadOnly vehicle_type As String = "vehicle_type"
     Public Shared ReadOnly vehicle_brand As String = "vehicle_brand"
+    Public Shared ReadOnly plate_no As String = "plate_no"
     Public Shared ReadOnly created_at As String = "created_at"
 End Class
 
