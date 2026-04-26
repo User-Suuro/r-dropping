@@ -1,5 +1,6 @@
 ﻿Public Class root
     Inherits BasePanel
+    Public Shared RootInstance As root
 
     Private TopPanel As Panel
     Private SidebarContainer As Panel
@@ -10,6 +11,7 @@
     Public Shared rootNav As NavigationManager
 
     Public Sub New()
+        RootInstance = Me
         Me.Dock = DockStyle.Fill
         Me.BackColor = Color.White
         InitializeUI()
@@ -84,7 +86,6 @@
 
         ' set initial page
         rootNav.GoToPage(New EmployeePage())
-        SetRouteLabel("Employees")
 
         AddHandler homeBtn.ButtonControl.Click,
         Sub(sender, e)
@@ -99,25 +100,25 @@
         AddHandler employeesBtn.ButtonControl.Click,
         Sub(sender, e)
             rootNav.GoToPage(New EmployeePage())
-            SetRouteLabel("Employees")
+
         End Sub
 
         AddHandler buyerBtn.ButtonControl.Click,
         Sub(sender, e)
             rootNav.GoToPage(New BuyerPage())
-            SetRouteLabel("Buyers")
+
         End Sub
 
 
         AddHandler courierBtn.ButtonControl.Click,
         Sub(sender, e)
             rootNav.GoToPage(New CourierPage())
-            SetRouteLabel("Courier")
+
         End Sub
 
         AddHandler sellersBtn.ButtonControl.Click,
         Sub(sender, e)
-            showUnavailablePage()
+            rootNav.GoToPage(New SellerPage())
         End Sub
 
 

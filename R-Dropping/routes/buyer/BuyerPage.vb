@@ -3,6 +3,8 @@ Public Class BuyerPage
     Inherits BasePanel
     Implements IRefreshable
 
+    Private routeName As String = "Buyers"
+
     Private _dgv As BaseDGV
 
     Public Sub RefreshPage() Implements IRefreshable.Refresh
@@ -14,6 +16,7 @@ Public Class BuyerPage
         InitializeComponent()
         SetupEventHandlers()
         FetchData()
+        root.RootInstance.SetRouteLabel(routeName)
     End Sub
 
     Private Sub InitializeComponent()

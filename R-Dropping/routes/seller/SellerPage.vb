@@ -1,10 +1,10 @@
 ﻿Imports MySql.Data.MySqlClient
 
-Public Class CourierPage
+Public Class SellerPage
     Inherits BasePanel
     Implements IRefreshable
 
-    Private routeName As String = "Courier"
+    Private routeName As String = "Sellers"
 
     Private _dgv As BaseDGV
 
@@ -79,19 +79,19 @@ Public Class CourierPage
 
         AddHandler _dgv.SearchButton.Click, Sub(sender, e)
                                                 Dim searchText = _dgv.GetSearchText()
-                                                Dim filterQuery = $"{Courier.first_name} LIKE '%{searchText}%' OR {Courier.last_name} LIKE '%{searchText}%'"
+                                                Dim filterQuery = $"{Buyer.first_name} LIKE '%{searchText}%' OR {Buyer.last_name} LIKE '%{searchText}%'"
                                                 _dgv.FilterData(searchText, filterQuery)
                                                 HandleCol()
                                             End Sub
 
 
         AddHandler _addBtn.Click, Sub(sender, e)
-                                      root.rootNav.GoToPage(New CourierForm())
+                                      root.rootNav.GoToPage(New SellerForm())
                                   End Sub
 
         AddHandler _updateBtn.Click, Sub(sender, e)
                                          Dim selectedRow = _dgv.GetSelectedRow()
-                                         root.rootNav.GoToPage(New CourierForm(selectedRow.Cells(0).Value))
+                                         root.rootNav.GoToPage(New SellerForm(selectedRow.Cells(0).Value))
                                      End Sub
 
         AddHandler _deleteBtn.Click, Sub(sender, e)
@@ -112,7 +112,7 @@ Public Class CourierPage
             loadingDlg,
             Form1.Instance,
             Async Function()
-                Dim sql As String = $"SELECT * FROM {Courier.table_name}"
+                Dim sql As String = $"SELECT * FROM {Seller.table_name}"
 
                 Dim reader As MySqlDataReader = Await ReadQueryAsync(sql)
 
@@ -130,8 +130,8 @@ Public Class CourierPage
     End Sub
 
     Private Sub HandleCol()
-        If _dgv.DataGridView.Columns.Contains(Courier.id) Then
-            _dgv.DataGridView.Columns(Courier.id).Visible = False
+        If _dgv.DataGridView.Columns.Contains(Seller.id) Then
+            _dgv.DataGridView.Columns(Seller.id).Visible = False
         End If
     End Sub
 
@@ -141,14 +141,15 @@ Public Class CourierPage
         DialogTypes.Apply(confirm_dlg,
                  DialogType.Confirmation,
                  "Confirmation",
-                 "Are you sure you want to delete this buyer?")
+                 "Are you sure you want to delete this Seller?")
 
         If Await confirm_dlg.ShowBaseDialogAsync(Form1.Instance) = DialogResultType.Confirm Then
-            Dim sql As String = $"DELETE FROM {Courier.table_name} 
-                                WHERE {Courier.id} = @{Courier.id}"
+            Dim sql As String = $"DELETE FROM {Seller.table_name} 
+                                WHERE {Seller.id} = @{Seller.id}"
+
 
             Dim params As New Dictionary(Of String, Object) From {
-                {$"@{Courier.id}", id}
+                {$"@{Seller.id}", id}
             }
 
             Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
@@ -160,7 +161,7 @@ Public Class CourierPage
                 DialogTypes.Apply(info_dlg,
                           DialogType.Info,
                           "Success",
-                          "Courier data was deleted successfully")
+                          "Seller data was deleted successfully")
 
                 Await info_dlg.ShowBaseDialogAsync(Form1.Instance)
 

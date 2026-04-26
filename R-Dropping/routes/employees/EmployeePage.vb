@@ -6,6 +6,7 @@ Public Class EmployeePage
     Implements IRefreshable
 
     Private _dgv As BaseDGV
+    Private routeName As String = "Employees"
 
     Public Sub RefreshPage() Implements IRefreshable.Refresh
         FetchEmployeesData()
@@ -22,6 +23,7 @@ Public Class EmployeePage
         _dgv = New BaseDGV()
         InitializeActionBtn()
         Me.Controls.Add(_dgv)
+        root.RootInstance.SetRouteLabel(routeName)
     End Sub
 
 

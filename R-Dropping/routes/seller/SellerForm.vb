@@ -1,24 +1,21 @@
 ﻿Imports MySql.Data.MySqlClient
 
-Public Class CourierForm
+Public Class SellerForm
     Inherits BasePanel
 
     Private _subContainer As PrimaryFlowLayoutPanel
 
-    Private _firstNameInput As BaseInputPanel
-    Private _firstNameField As ValidationPanel
+    Private _sellerNameInput As BaseInputPanel
+    Private _sellerNameField As ValidationPanel
 
-    Private _lastNameInput As BaseInputPanel
-    Private _lastNameField As ValidationPanel
+    Private _sellerEmailInput As BaseInputPanel
+    Private _sellerEmailField As ValidationPanel
 
-    Private _vehicleTypeInput As BaseComboBox
-    Private _vehicleTypeField As ValidationPanel
+    Private _contactNoInput As BaseInputPanel
+    Private _contactNoField As ValidationPanel
 
-    Private _vehicleBrandInput As InputComboBox
-    Private _vehicleBrandField As ValidationPanel
-
-    Private _plateNoInput As BaseInputPanel
-    Private _plateNoField As ValidationPanel
+    Private _platformInput As BaseComboBox
+    Private _platformField As ValidationPanel
 
     Private _addButton As BaseButton
     Private _cancelButton As BaseButton
@@ -45,48 +42,43 @@ Public Class CourierForm
             .BorderStyle = BorderStyle.FixedSingle
         }
 
-        ' First Name
-        _firstNameInput = New BaseInputPanel() With {
-            .LabelText = "First Name"
+        ' Seller Name
+        _sellerNameInput = New BaseInputPanel With {
+            .LabelText = "Seller Name"
         }
 
-        _firstNameField = New ValidationPanel(_firstNameInput)
-        _firstNameField.SetValidator(New InputValidator().Required())
+        _sellerNameField = New ValidationPanel(_sellerNameInput)
+        _sellerNameField.SetValidator(New InputValidator().Required())
 
+        ' Email
 
-        ' Last Name
-        _lastNameInput = New BaseInputPanel() With {
-            .LabelText = "Last Name"
+        _sellerEmailInput = New BaseInputPanel() With {
+            .LabelText = "Email (optional)"
         }
 
-        _lastNameField = New ValidationPanel(_lastNameInput)
-        _lastNameField.SetValidator(New InputValidator().Required())
+        _sellerEmailField = New ValidationPanel(_sellerEmailInput)
+        _sellerEmailField.SetValidator(New InputValidator().IsEmail())
 
-        ' Vehicle Type
-        _vehicleTypeInput = New BaseComboBox("Vehicle Type") With {
-            .Placeholder = "Select vehicle type...",
+        ' Contact No
+
+        _contactNoInput = New BaseInputPanel() With {
+            .LabelText = "Contact Number (optional)"
+        }
+
+        _contactNoField = New ValidationPanel(_contactNoInput)
+        _contactNoField.SetValidator(New InputValidator().IsPhone())
+
+        ' Platform
+        _platformInput = New BaseComboBox("Platform") With {
+            .Placeholder = "Select platform type...",
             .SearchEnabled = False,
             .Items = New List(Of String) From {
-             "Motorcyle", "Tricycle", "Truck", "Car"
+                "Facebook", "TikTok"
             }
         }
 
-        _vehicleTypeField = New ValidationPanel(_vehicleTypeInput)
-        _vehicleTypeField.SetValidator(New InputValidator().Required())
-
-        ' Vehicle Brand
-        _vehicleBrandInput = New InputComboBox("Vehicle Brand")
-
-        _vehicleBrandField = New ValidationPanel(_vehicleBrandInput)
-        _vehicleBrandField.SetValidator(New InputValidator().Required())
-
-        ' Plate Number
-        _plateNoInput = New BaseInputPanel() With {
-            .LabelText = "Plate Number"
-        }
-        _plateNoField = New ValidationPanel(_plateNoInput)
-        _plateNoField.SetValidator(New InputValidator().Required())
-
+        _platformField = New ValidationPanel(_platformInput)
+        _platformField.SetValidator(New InputValidator().Required())
 
         ' Button Table
         _buttonTable = New TableLayoutPanel With {
@@ -121,11 +113,10 @@ Public Class CourierForm
         _buttonTable.Controls.Add(_addButton, 1, 0)
 
         With _subContainer.Controls
-            .Add(_firstNameField)
-            .Add(_lastNameField)
-            .Add(_vehicleTypeField)
-            .Add(_vehicleBrandField)
-            .Add(_plateNoField)
+            .Add(_sellerNameField)
+            .Add(_sellerEmailField)
+            .Add(_contactNoField)
+            .Add(_platformField)
             .Add(_buttonTable)
         End With
 
@@ -137,12 +128,7 @@ Public Class CourierForm
         AddHandler _cancelButton.Click, AddressOf CancelAdd
     End Sub
 
-    Private Async Sub LoadAsync()
-        Await loadDataForCmb()
-        If _id.HasValue() Then
-            Await fetchDataForEditMode(_id.Value)
-        End If
-    End Sub
+
 
     Private Sub CancelAdd()
         root.rootNav.GoBackPage()
@@ -156,10 +142,10 @@ Public Class CourierForm
 
         Dim confirm_dlg = New BaseDialog()
 
-        Dim msg As String = "Are you sure you want to add this courier?"
+        Dim msg As String = "Are you sure you want to add this seller?"
 
         If _id.HasValue() Then
-            msg = "Are you sure you want to save changes to this courier?"
+            msg = "Are you sure you want to save changes to this seller?"
         End If
 
         DialogTypes.Apply(confirm_dlg,
@@ -215,43 +201,21 @@ Public Class CourierForm
 
     End Sub
 
-
-
-    Private Async Function loadDataForCmb() As Task
-        Dim list As New List(Of String)
-
-        Dim sql As String =
-        $"SELECT DISTINCT {Courier.vehicle_brand} " &
-        $"FROM {Courier.table_name}"
-
-        Using reader As MySqlDataReader = Await ReadQueryAsync(sql)
-            If reader IsNot Nothing Then
-                While Await reader.ReadAsync()
-                    list.Add(reader(Courier.vehicle_brand).ToString())
-                End While
-            End If
-        End Using
-
-        _vehicleBrandInput.Items = list
-
-    End Function
-
     Private Function ValidateAllInputs() As Boolean
-        Return {_firstNameField, _lastNameField, _vehicleTypeField, _vehicleBrandField, _plateNoField}.All(Function(f) f.ValidateInput())
+        Return {_sellerNameField, _sellerEmailField, _contactNoField, _platformField}.All(Function(f) f.ValidateInput())
     End Function
 
     Private Async Function AddQuery() As Task(Of Boolean)
         Dim sql As String =
-        $"INSERT INTO {Courier.table_name} " &
-        $"({Courier.first_name}, {Courier.last_name}, {Courier.vehicle_type}, {Courier.vehicle_brand}, {Courier.plate_no}) " &
-        $"VALUES (@{Courier.first_name}, @{Courier.last_name}, @{Courier.vehicle_type}, @{Courier.vehicle_brand}, @{Courier.plate_no})"
+        $"INSERT INTO {Seller.table_name} " &
+        $"({Seller.seller_name}, {Seller.email}, {Seller.contact_no}, {Seller.platform}) " &
+        $"VALUES (@{Seller.seller_name}, @{Seller.email}, @{Seller.contact_no}, @{Seller.platform})"
 
         Dim params As New Dictionary(Of String, Object) From {
-        {$"@{Courier.first_name}", _firstNameInput.Value},
-        {$"@{Courier.last_name}", _lastNameInput.Value},
-        {$"@{Courier.vehicle_type}", _vehicleTypeInput.SelectedValue},
-        {$"@{Courier.vehicle_brand}", _vehicleBrandInput.GetValue()},
-        {$"@{Courier.plate_no}", ToDbNull(_plateNoInput.Value)}
+        {$"@{Seller.seller_name}", _sellerNameInput.Value},
+        {$"@{Seller.email}", ToDbNull(_sellerEmailInput.Value.Trim())},
+        {$"@{Seller.contact_no}", ToDbNull(_contactNoInput.Value.Trim())},
+        {$"@{Seller.platform}", _platformInput.SelectedValue}
         }
 
         Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
@@ -263,33 +227,39 @@ Public Class CourierForm
         Return False
     End Function
 
+
+    Private Async Sub LoadAsync()
+        ' Await loadDataForCmb()
+        If _id.HasValue() Then
+            Await fetchDataForEditMode(_id.Value)
+        End If
+    End Sub
+
     Private Async Function fetchDataForEditMode(id As Integer) As Task
         _addButton.Text = "Save"
 
         Dim sql As String =
-       $"SELECT {Courier.first_name}, {Courier.last_name}, {Courier.vehicle_type}, {Courier.vehicle_brand}, {Courier.plate_no} " &
-       $"FROM {Courier.table_name} " &
-       $"WHERE {Courier.id} = @{Courier.id}"
+        $"SELECT {Seller.seller_name}, {Seller.email}, {Seller.contact_no}, {Seller.platform} " &
+        $"FROM {Seller.table_name} " &
+        $"WHERE {Seller.id} = @{Seller.id}"
 
         Dim params As New Dictionary(Of String, Object) From {
-        {$"@{Courier.id}", id}
-    }
+            {$"@{Seller.id}", id}
+        }
 
         Dim reader As MySqlDataReader = Await ReadQueryAsync(sql, params)
 
         If reader IsNot Nothing Then
             While Await reader.ReadAsync()
-                Dim firstName As String = reader(Courier.first_name).ToString()
-                Dim lastName As String = reader(Courier.last_name).ToString()
-                Dim vehicle_type As String = reader(Courier.vehicle_type).ToString()
-                Dim vehicle_brand As String = reader(Courier.vehicle_brand).ToString()
-                Dim plate_no As String = reader(Courier.plate_no).ToString()
+                Dim sellerName As String = reader(Seller.seller_name)
+                Dim sellerEmail As String = If(IsDBNull(reader(Seller.email)), "", reader(Seller.email))
+                Dim contactNumber As String = If(IsDBNull(reader(Seller.contact_no)), "", reader(Seller.contact_no))
+                Dim platform As String = reader(Seller.platform)
 
-                _firstNameInput.SetValue(firstName)
-                _lastNameInput.SetValue(lastName)
-                _vehicleTypeInput.SetValue(vehicle_type)
-                _vehicleBrandInput.SetValue(vehicle_brand)
-                _plateNoInput.SetValue(plate_no)
+                _sellerNameInput.SetValue(sellerName)
+                _sellerEmailInput.SetValue(sellerEmail)
+                _contactNoInput.SetValue(contactNumber)
+                _platformInput.SetValue(platform)
             End While
 
             reader.Close()
@@ -298,22 +268,19 @@ Public Class CourierForm
 
     Private Async Function EditQuery() As Task(Of Boolean)
         Dim sql As String =
-       $"UPDATE {Courier.table_name} SET " &
-       $"{Courier.first_name} = @{Courier.first_name}, " &
-       $"{Courier.last_name} = @{Courier.last_name}, " &
-       $"{Courier.vehicle_type} = @{Courier.vehicle_type}, " &
-       $"{Courier.vehicle_brand} = @{Courier.vehicle_brand}, " &
-       $"{Courier.plate_no} = @{Courier.plate_no} " &
-       $"WHERE {Courier.id} = @{Courier.id}"
-
+       $"UPDATE {Seller.table_name} SET " &
+       $"{Seller.seller_name} = @{Seller.seller_name}, " &
+       $"{Seller.email} = @{Seller.email}, " &
+       $"{Seller.contact_no} = @{Seller.contact_no}, " &
+       $"{Seller.platform} = @{Seller.platform} " &
+       $"WHERE {Seller.id} = @{Seller.id}"
 
         Dim params As New Dictionary(Of String, Object) From {
-        {$"@{Courier.first_name}", _firstNameInput.Value},
-        {$"@{Courier.last_name}", _lastNameInput.Value},
-        {$"@{Courier.vehicle_type}", _vehicleTypeInput.SelectedValue},
-        {$"@{Courier.vehicle_brand}", _vehicleBrandInput.GetValue()},
-        {$"@{Courier.plate_no}", _plateNoInput.Value},
-        {$"@{Courier.id}", _id}
+        {$"@{Seller.seller_name}", _sellerEmailInput.Value},
+        {$"@{Seller.email}", ToDbNull(_sellerEmailInput.Value.Trim())},
+        {$"@{Seller.contact_no}", ToDbNull(_contactNoInput.Value.Trim())},
+        {$"@{Seller.platform}", _platformInput.SelectedValue},
+        {$"@{Seller.id}", _id}
         }
 
         Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)

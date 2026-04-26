@@ -5,7 +5,6 @@ Public Interface IValueProvider
     Event ValueChanged As EventHandler
 End Interface
 
-
 Public Interface IValidationStyleable
     Sub OnValidationError()
     Sub OnValidationClear()
@@ -16,7 +15,6 @@ Public Interface IValidatableInput
     Function ValidateInput() As Boolean
     ReadOnly Property IsValid As Boolean
 End Interface
-
 
 Public Class ValidationPanel
     Inherits Panel
@@ -43,7 +41,7 @@ Public Class ValidationPanel
         Me.BackColor = Color.Transparent
         Me.AutoSize = False
 
-        ' ── Error label ──────────────────────────────────────────
+        ' Error label 
         _lblError = New BaseLabel() With {
             .AutoSize = False,
             .Height = ErrorHeight,
@@ -172,8 +170,6 @@ Public Class InputValidator
 
     Private ReadOnly _rules As New List(Of Func(Of String, ValidationResult))
 
-    ' ── String rules ─────────────────────────────────────────────
-
     Public Function Required() As InputValidator
         _rules.Add(Function(v)
                        Return If(String.IsNullOrWhiteSpace(v),
@@ -200,8 +196,6 @@ Public Class InputValidator
                    End Function)
         Return Me
     End Function
-
-    ' ── Number rules ─────────────────────────────────────────────
 
     Public Function IsNumber() As InputValidator
         _rules.Add(Function(v)
@@ -242,6 +236,17 @@ Public Class InputValidator
         Return Me
     End Function
 
+    Public Function IsEmail() As InputValidator
+        _rules.Add(Function(v)
+                       If String.IsNullOrWhiteSpace(v) Then Return ValidationResult.Ok
+                       Return If(Not Regex.IsMatch(v, "^[^@\s]+@[^@\s]+\.[^@\s]+$"),
+                             New ValidationResult(False, "Must be a valid email address"),
+                             ValidationResult.Ok)
+                   End Function)
+        Return Me
+    End Function
+
+
     Public Function Custom(rule As Func(Of String, ValidationResult)) As InputValidator
         _rules.Add(rule)
         Return Me
@@ -260,9 +265,6 @@ Public Class InputValidator
 End Class
 
 
-' 
-' VALIDATION RESULT
-' 
 Public Class ValidationResult
 
     Public Property IsValid As Boolean
