@@ -240,6 +240,9 @@ Public Class PricingForm
     Private Async Function fetchDataForEditMode(id As Integer) As Task
         _addButton.Text = "Save"
 
+        _baseFeeInput.Enabled = False
+        _dailyFeeInput.Enabled = False
+
         Dim sql As String =
         $"SELECT {Pricing.rate_label}, {Pricing.description}, {Pricing.base_fee}, {Pricing.daily_increment_fee} " &
         $"FROM {Pricing.table_name} " &

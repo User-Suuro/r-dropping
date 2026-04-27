@@ -234,6 +234,7 @@ Public Class StorageForm
 
     Private Async Function fetchDataForEditMode(id As Integer) As Task
         _addButton.Text = "Save"
+        _capLimitInp.Enabled = False
 
         Dim sql As String =
         $"SELECT {Storage.storage_name}, {Storage.storage_type}, {Storage.capacity_limit} " &
