@@ -100,15 +100,12 @@
         AddHandler employeesBtn.ButtonControl.Click,
         Sub(sender, e)
             rootNav.GoToPage(New EmployeePage())
-
         End Sub
 
         AddHandler buyerBtn.ButtonControl.Click,
         Sub(sender, e)
             rootNav.GoToPage(New BuyerPage())
-
         End Sub
-
 
         AddHandler courierBtn.ButtonControl.Click,
         Sub(sender, e)
@@ -124,12 +121,12 @@
 
         AddHandler pricingBtn.ButtonControl.Click,
         Sub(sender, e)
-            showUnavailablePage()
+            rootNav.GoToPage(New PricingPage())
         End Sub
 
         AddHandler storageBtn.ButtonControl.Click,
         Sub(sender, e)
-            showUnavailablePage()
+            rootNav.GoToPage(New StoragePage())
         End Sub
 
         With Sidebar.Controls

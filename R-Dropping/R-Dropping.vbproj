@@ -191,6 +191,12 @@
     <Compile Include="routes\employees\EmployeePage.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="routes\pricing\PricingForm.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="routes\pricing\PricingPage.vb">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="routes\root.vb">
       <SubType>Component</SubType>
     </Compile>
@@ -198,6 +204,12 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="routes\seller\SellerPage.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="routes\storage\StorageForm.vb">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="routes\storage\StoragePage.vb">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="utils\config.vb" />

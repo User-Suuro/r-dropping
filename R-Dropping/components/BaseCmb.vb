@@ -494,8 +494,6 @@ Public Class InputComboBox
         Return If(String.IsNullOrWhiteSpace(v), fallback, v)
     End Function
 
-
-
     Private Sub _txt_LostFocus(sender As Object, e As EventArgs) Handles _txt.LostFocus
         BeginInvoke(Sub()
                         If _dropdown Is Nothing Then Return

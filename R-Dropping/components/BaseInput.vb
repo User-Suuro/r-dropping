@@ -230,9 +230,9 @@ Public Class BaseNumericPanel
     Public Sub SetPricingMode()
         _numInput.Minimum = 0
         _numInput.Maximum = Decimal.MaxValue
-        _numInput.DecimalPlaces = 1
-        _numInput.Increment = 1D
-        _numInput.Value = 0.0D
+        _numInput.DecimalPlaces = 2
+        _numInput.Increment = 2D
+        _numInput.Value = 0.00D
     End Sub
 
     Public ReadOnly Property InputControl As Guna2NumericUpDown

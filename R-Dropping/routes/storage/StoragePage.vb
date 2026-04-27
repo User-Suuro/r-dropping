@@ -1,10 +1,10 @@
 ﻿Imports MySql.Data.MySqlClient
 
-Public Class SellerPage
+Public Class StoragePage
     Inherits BasePanel
     Implements IRefreshable
 
-    Private routeName As String = "Sellers"
+    Private routeName As String = "Storage"
 
     Private _dgv As BaseDGV
 
@@ -79,19 +79,19 @@ Public Class SellerPage
 
         AddHandler _dgv.SearchButton.Click, Sub(sender, e)
                                                 Dim searchText = _dgv.GetSearchText()
-                                                Dim filterQuery = $"{Seller.seller_name} LIKE '%{searchText}%'"
+                                                Dim filterQuery = $"{Storage.storage_name} LIKE '%{searchText}%'"
                                                 _dgv.FilterData(searchText, filterQuery)
                                                 HandleCol()
                                             End Sub
 
 
         AddHandler _addBtn.Click, Sub(sender, e)
-                                      root.rootNav.GoToPage(New SellerForm())
+                                      root.rootNav.GoToPage(New StorageForm())
                                   End Sub
 
         AddHandler _updateBtn.Click, Sub(sender, e)
                                          Dim selectedRow = _dgv.GetSelectedRow()
-                                         root.rootNav.GoToPage(New SellerForm(selectedRow.Cells(0).Value))
+                                         root.rootNav.GoToPage(New StorageForm(selectedRow.Cells(0).Value))
                                      End Sub
 
         AddHandler _deleteBtn.Click, Sub(sender, e)
@@ -112,7 +112,7 @@ Public Class SellerPage
             loadingDlg,
             Form1.Instance,
             Async Function()
-                Dim sql As String = $"SELECT * FROM {Seller.table_name}"
+                Dim sql As String = $"SELECT * FROM {Storage.table_name}"
 
                 Dim reader As MySqlDataReader = Await ReadQueryAsync(sql)
 
@@ -130,8 +130,8 @@ Public Class SellerPage
     End Sub
 
     Private Sub HandleCol()
-        If _dgv.DataGridView.Columns.Contains(Seller.id) Then
-            _dgv.DataGridView.Columns(Seller.id).Visible = False
+        If _dgv.DataGridView.Columns.Contains(Storage.id) Then
+            _dgv.DataGridView.Columns(Storage.id).Visible = False
         End If
     End Sub
 
@@ -141,15 +141,15 @@ Public Class SellerPage
         DialogTypes.Apply(confirm_dlg,
                  DialogType.Confirmation,
                  "Confirmation",
-                 "Are you sure you want to delete this Seller?")
+                 "Are you sure you want to delete this Storage?")
 
         If Await confirm_dlg.ShowBaseDialogAsync(Form1.Instance) = DialogResultType.Confirm Then
-            Dim sql As String = $"DELETE FROM {Seller.table_name} 
-                                WHERE {Seller.id} = @{Seller.id}"
+            Dim sql As String = $"DELETE FROM {Storage.table_name} 
+                                WHERE {Storage.id} = @{Storage.id}"
 
 
             Dim params As New Dictionary(Of String, Object) From {
-                {$"@{Seller.id}", id}
+                {$"@{Storage.id}", id}
             }
 
             Dim affectedRows As Integer = Await ExecuteQueryAsync(sql, params)
@@ -161,7 +161,7 @@ Public Class SellerPage
                 DialogTypes.Apply(info_dlg,
                           DialogType.Info,
                           "Success",
-                          "Seller data was deleted successfully")
+                          "Storage data was deleted successfully")
 
                 Await info_dlg.ShowBaseDialogAsync(Form1.Instance)
 
